@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>HEXA 屬性強化全機率計算機</title>
+    <style>
+        body { font-family: sans-serif; max-width: 900px; margin: 20px auto; line-height: 1.6; background-color: #f4f4f9; padding: 10px; }
+        .card { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 15px rgba(0,0,0,0.1); }
+        h2 { color: #333; border-bottom: 2px solid #5d5cde; padding-bottom: 10px; }
+        .grid-input { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .input-group { margin-bottom: 10px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
+        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background-color: #5d5cde; color: white; border: none; padding: 12px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; font-weight: bold; }
+        button:hover { background-color: #4b4ab2; }
+        .results-container { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 25px; }
+        .result-column { background: #fff; border: 1px solid #eee; border-radius: 4px; }
+        h3 { font-size: 1.1em; text-align: center; color: #fff; background: #5d5cde; margin: 0; padding: 10px; border-radius: 4px 4px 0 0; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
+        th, td { border-bottom: 1px solid #eee; padding: 8px; text-align: center; }
+        th { background-color: #fafafa; }
+        .prob-bar { background: #eef2ff; color: #5d5cde; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>HEXA 屬性強化模擬器 (全屬性版)</h2>
+    <p>輸入目前進度，將計算剩下強化次數中，各屬性達成 10 級的機率。</p>
+    
+    <div class="grid-input">
+        <div class="input-group">
+            <label>主要屬性等級:</label>
+            <input type="number" id="mainStat" value="6" min="0" max="10">
+        </div>
+        <div class="input-group">
+            <label>附加屬性 1 等級:</label>
+            <input type="number" id="addStat1" value="3" min="0" max="10">
+        </div>
+        <div class="input-group">
+            <label>附加屬性 2 等級:</label>
+            <input type="number" id="addStat2" value="4" min="0" max="10">
+        </div>
+    </div>
+
+    <button onclick="calculateAll()">一鍵計算所有屬性機率</button>
+
+    <div id="summary" style="margin-top: 15px; text-align: center; font-weight: bold; color: #d32f2f;"></div>
+
+    <div class="results-container" id="resultsArea">
+        </div>
+</div>
+
+<script>
+function calculateAll() {
+    const m = parseInt(document.getElementById('mainStat').value);
+    const a1 = parseInt(document.getElementById('addStat1').value);
+    const a2 = parseInt(document.getElementById('addStat2').value);
+    
+    const used = m + a1 + a2;
+    const remaining = 20 - used;
+
+    if (remaining < 0) {
+        document.getElementById('summary').innerText = `錯誤：目前已使用 ${used} 次強化，超過上限 20 次！`;
+        return;
+    }
+    document.getElementById('summary').innerText = `剩餘強化次數：${remaining} 次`;
+
+    // 成功機率設定 (使用者提供)
+    const p_main_map = {
+        0: 0.35, 1: 0.35, 2: 0.20, 3: 0.20, 4: 0.20, 
+        5: 0.20, 6: 0.20, 7: 0.15, 8: 0.10, 9: 0.05, 10: 0.0
+    };
+
+    // DP 狀態: dp[m][a1][a2] = 機率
+    let dp = {};
+    dp[`${m},${a1},${a2}`] = 1.0;
+
+    for (let i = 0; i < remaining; i++) {
+        let next_dp = {};
+        for (let key in dp) {
+            let [cm, ca1, ca2] = key.split(',').map(Number);
+            let prob = dp[key];
+
+            let pm = p_main_map[cm];
+            // 計算附加屬性平手機率
+            let activeAdds = (ca1 < 10 ? 1 : 0) + (ca2 < 10 ? 1 : 0);
+            let pa = activeAdds > 0 ? (1.0 - (cm < 10 ? pm : 0)) / activeAdds : 0;
+
+            // 1. 強化主要屬性
+            if (cm < 10) {
+                let k = `${cm+1},${ca1},${ca2}`;
+                next_dp[k] = (next_dp[k] || 0) + prob * pm;
+            } else {
+                let k = `${cm},${ca1},${ca2}`;
+                next_dp[k] = (next_dp[k] || 0) + prob * 0; // pm is 0 if cm=10
+            }
+
+            // 2. 強化附加屬性 1
+            if (ca1 < 10) {
+                let k = `${cm},${ca1+1},${ca2}`;
+                next_dp[k] = (next_dp[k] || 0) + prob * pa;
+            }
+
+            // 3. 強化附加屬性 2
+            if (ca2 < 10) {
+                let k = `${cm},${ca1},${ca2+1}`;
+                next_dp[k] = (next_dp[k] || 0) + prob * pa;
+            }
+        }
+        dp = next_dp;
+    }
+
+    // 彙整結果
+    renderTable('主要屬性', 10, m, dp, 0);
+    renderTable('附加屬性 1', 10, a1, dp, 1);
+    renderTable('附加屬性 2', 10, a2, dp, 2);
+}
+
+function renderTable(title, max, current, dp, type) {
+    let stats = new Array(11).fill(0);
+    for (let key in dp) {
+        let vals = key.split(',').map(Number);
+        stats[vals[type]] += dp[key];
+    }
+
+    let html = `<div class="result-column"><h3>${title}</h3><table><tr><th>等級</th><th>精確機率</th></tr>`;
+    for (let i = 10; i >= current; i--) {
+        let p = (stats[i] * 100).toFixed(3);
+        let bar = i === 10 || p > 10 ? 'class="prob-bar"' : '';
+        html += `<tr ${bar}><td>Lv.${i}</td><td>${p}%</td></tr>`;
+    }
+    html += `</table></div>`;
+
+    if (type === 0) document.getElementById('resultsArea').innerHTML = html;
+    else document.getElementById('resultsArea').innerHTML += html;
+}
+</script>
+
+</body>
+</html>
