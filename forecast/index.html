@@ -1,0 +1,1661 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>時事預測所</title>
+<meta name="description" content="針對時事開題，依 Claude 上網蒐集的資料計算賠率下注，並記錄自己思路的預測帳本。">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="預測所">
+<meta name="theme-color" content="#ffffff" id="metaTheme">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'%3E%3Crect x='1' y='1' width='26' height='26' rx='8' fill='%230c0d10'/%3E%3Cpath d='M7.5 18.5a6.5 6.5 0 0 1 13 0' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round'/%3E%3Cpath d='M14 18.5l4-5' stroke='%238194ff' stroke-width='2.2' stroke-linecap='round'/%3E%3Ccircle cx='14' cy='18.5' r='1.8' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap">
+<script>
+  /* 先套用使用者選的白天／黑夜模式，避免畫面閃一下 */
+  try { var t = localStorage.getItem('fc.theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+/* 版面：單欄「賠率看板」——上方是點數錢包，下方是題目卡片；詳情、下注、筆記從右側抽屜滑出 */
+:root {
+  --bg: #ffffff;  --fg: #0c0d10;  --fg-2: #373b44;  --muted: #686e7a;  --faint: #a1a6b0;
+  --line: #e8eaee;  --line-2: #d3d7de;  --panel: #f5f6f8;  --hover: #f0f1f4;
+  --accent: #2347ff;  --accent-ink: #ffffff;  --accent-soft: #edf0ff;
+  --up: #d32f3e;  --down: #0f8a4b;  --warn: #a66300;   /* 台股慣例：紅＝賺、綠＝賠 */
+  --scrim: rgba(12,13,16,.36);  --shadow: 0 12px 40px rgba(12,13,16,.14);
+  --font-ui: "Noto Sans TC", "PingFang TC", "Heiti TC", "Microsoft JhengHei", system-ui, sans-serif;
+  --font-display: "Noto Serif TC", "Songti TC", "PMingLiU", serif;
+  --font-num: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --r: 14px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #000000;  --fg: #f2f3f5;  --fg-2: #c8cbd2;  --muted: #959aa6;  --faint: #5c616c;
+    --line: #1b1d22;  --line-2: #2d3037;  --panel: #0b0c0e;  --hover: #121317;
+    --accent: #8194ff;  --accent-ink: #000000;  --accent-soft: #11162b;
+    --up: #ff5c69;  --down: #33c27c;  --warn: #f2a73b;
+    --scrim: rgba(0,0,0,.62);  --shadow: 0 0 0 1px #24262c, 0 16px 48px rgba(0,0,0,.6);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #000000;  --fg: #f2f3f5;  --fg-2: #c8cbd2;  --muted: #959aa6;  --faint: #5c616c;
+  --line: #1b1d22;  --line-2: #2d3037;  --panel: #0b0c0e;  --hover: #121317;
+  --accent: #8194ff;  --accent-ink: #000000;  --accent-soft: #11162b;
+  --up: #ff5c69;  --down: #33c27c;  --warn: #f2a73b;
+  --scrim: rgba(0,0,0,.62);  --shadow: 0 0 0 1px #24262c, 0 16px 48px rgba(0,0,0,.6);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--fg); font: 15px/1.65 var(--font-ui); -webkit-font-smoothing: antialiased; }
+button, input, textarea, select { font: inherit; color: inherit; }
+a { color: var(--accent); }
+[hidden] { display: none !important; }
+svg { display: block; }
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.up { color: var(--up); }
+.down { color: var(--down); }
+.warn { color: var(--warn); }
+.sep { color: var(--faint); margin: 0 2px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+.eyebrow { font-size: 12px; letter-spacing: .14em; color: var(--muted); font-weight: 500; }
+
+/* ---------- 頂部列 ---------- */
+.topbar { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); padding-top: env(safe-area-inset-top, 0px); }
+.topbar-in { max-width: 880px; margin: 0 auto; height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.brand { display: flex; align-items: center; gap: 10px; color: var(--fg); text-decoration: none; min-width: 0; }
+.brand-mark { width: 28px; height: 28px; flex: none; }
+.bm-bg { fill: var(--fg); }
+.bm-arc { fill: none; stroke: var(--bg); stroke-width: 2.2; stroke-linecap: round; }
+.bm-needle { stroke: var(--accent); stroke-width: 2.2; stroke-linecap: round; }
+.bm-dot { fill: var(--bg); }
+.brand-name { font-family: var(--font-display); font-weight: 700; font-size: 19px; letter-spacing: .1em; white-space: nowrap; }
+.top-actions { display: flex; align-items: center; gap: 2px; }
+.icon-btn { width: 38px; height: 38px; display: inline-grid; place-items: center; border: 0; background: transparent; border-radius: 10px; cursor: pointer; color: var(--fg-2); flex: none; }
+.icon-btn:hover { background: var(--hover); color: var(--fg); }
+.icon-btn svg { width: 20px; height: 20px; }
+.icon-btn.sm { width: 32px; height: 32px; }
+.icon-btn.sm svg { width: 16px; height: 16px; }
+.sync { font-size: 12px; color: var(--muted); margin-right: 8px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.sync::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--faint); }
+.sync[data-state="ok"]::before { background: var(--accent); }
+.sync[data-state="busy"]::before { background: var(--warn); animation: pulse 1s ease-in-out infinite; }
+.sync[data-state="err"]::before { background: var(--up); }
+@keyframes pulse { 50% { opacity: .3; } }
+
+/* ---------- 主欄 ---------- */
+.wrap { max-width: 880px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 4px calc(64px + env(safe-area-inset-bottom, 0px)); }
+
+/* ---------- 錢包 ---------- */
+.wallet { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 28px; align-items: end; padding: 30px 0 24px; border-bottom: 1px solid var(--line); }
+.big { font-size: 56px; font-weight: 600; line-height: 1.02; margin-top: 8px; letter-spacing: -.03em; }
+.big .unit { font-family: var(--font-ui); font-size: 15px; font-weight: 500; color: var(--muted); margin-left: 8px; letter-spacing: 0; }
+.wallet-sub { margin-top: 10px; font-size: 13px; color: var(--muted); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 1px 10px; border-radius: 999px; border: 1px solid var(--line-2); font-size: 12px; color: var(--fg-2); white-space: nowrap; }
+.pill.on { border-color: var(--accent); color: var(--accent); }
+.wallet-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; }
+.wallet-stats > div { padding-left: 14px; border-left: 1px solid var(--line); min-width: 0; }
+.wallet-stats dt { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.wallet-stats dd { margin: 4px 0 0; font-size: 21px; font-weight: 500; white-space: nowrap; }
+@media (max-width: 680px) {
+  .wallet { grid-template-columns: 1fr; gap: 20px; padding-top: 24px; }
+  .wallet-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 16px; }
+  .big { font-size: 48px; }
+}
+
+/* ---------- 提示列 ---------- */
+.banner { margin-top: 18px; border: 1px solid var(--line-2); border-radius: var(--r); padding: 14px 16px; display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; background: var(--panel); }
+.banner p { margin: 0; font-size: 14px; color: var(--fg-2); flex: 1 1 260px; min-width: 0; }
+
+/* ---------- 工具列 ---------- */
+.toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 22px; }
+.seg { display: inline-flex; padding: 3px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.seg::-webkit-scrollbar { display: none; }
+.seg button { border: 0; background: transparent; padding: 6px 12px; border-radius: 9px; font-size: 14px; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.seg button[aria-selected="true"] { background: var(--bg); color: var(--fg); font-weight: 500; box-shadow: 0 1px 2px rgba(0,0,0,.1), 0 0 0 1px var(--line); }
+.seg .cnt { font-family: var(--font-num); font-size: 12px; color: var(--faint); margin-left: 5px; }
+.seg-full { display: flex; width: 100%; }
+.seg-full button { flex: 1; }
+.tool-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 38px; padding: 0 16px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--bg); color: var(--fg); font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap; text-decoration: none; transition: background .12s, border-color .12s; }
+.btn:hover { background: var(--hover); }
+.btn svg { width: 16px; height: 16px; }
+.btn-primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.btn-primary:hover { background: var(--fg-2); border-color: var(--fg-2); }
+.btn-ghost { background: transparent; }
+.btn-danger { color: var(--up); }
+.btn-danger-solid { background: var(--up); border-color: var(--up); color: #fff; }
+.btn:disabled { opacity: .42; cursor: not-allowed; }
+.btn-block { width: 100%; height: 48px; font-size: 15px; }
+.btn-sm { height: 32px; padding: 0 12px; font-size: 13px; border-radius: 9px; }
+.link-btn { border: 0; background: none; padding: 0; color: var(--muted); font-size: 12px; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.link-btn:hover { color: var(--up); }
+.worker-line { font-size: 12.5px; color: var(--muted); margin: 12px 2px 0; display: flex; gap: 4px 8px; align-items: center; flex-wrap: wrap; }
+.worker-line .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: none; }
+.worker-line b { color: var(--fg-2); font-weight: 500; }
+.worker-sum { flex-basis: 100%; color: var(--faint); padding-left: 14px; }
+
+/* ---------- 題目卡片 ---------- */
+.list { display: grid; gap: 14px; margin-top: 16px; }
+.qcard { border: 1px solid var(--line); border-radius: var(--r); padding: 18px 20px 14px; background: var(--bg); transition: border-color .15s; min-width: 0; }
+.qcard:hover { border-color: var(--line-2); }
+.qcard.is-fresh { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.qcard.s-void { opacity: .6; }
+.qmeta { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: 12.5px; color: var(--muted); }
+.badge { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; padding: 1px 9px; border-radius: 999px; border: 1px solid currentColor; line-height: 1.6; white-space: nowrap; }
+.badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.b-open { color: var(--accent); }
+.b-pending { color: var(--warn); }
+.b-done { color: var(--fg-2); }
+.b-void { color: var(--faint); }
+.tag { font-size: 12px; color: var(--muted); padding: 0 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); white-space: nowrap; line-height: 1.7; }
+.tag-claude { color: var(--accent); border-color: transparent; background: var(--accent-soft); }
+.qtitle { font-family: var(--font-display); font-weight: 700; font-size: 20px; line-height: 1.5; margin: 10px 0 12px; text-wrap: balance; letter-spacing: .01em; overflow-wrap: anywhere; }
+.qtitle.lg { font-size: 23px; margin-top: 12px; }
+.qtitle-btn { all: unset; cursor: pointer; }
+.qtitle-btn:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 5px; }
+.qtitle-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+.result-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: -4px 0 12px; font-size: 14px; color: var(--fg-2); }
+.result-line svg { width: 16px; height: 16px; color: var(--accent); }
+.opts { list-style: none; margin: 0; padding: 0; }
+.opt, .opt-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(72px, 30%) 46px 62px; gap: 12px; align-items: center; }
+.opt-head { font-size: 11.5px; color: var(--faint); letter-spacing: .08em; padding-bottom: 4px; }
+.opt-head span:nth-child(3) { text-align: right; }
+.opt-head span:nth-child(4) { text-align: center; padding-left: 8px; }
+.opt { padding: 8px 0; border-top: 1px dashed var(--line); }
+.opt-label { font-size: 14.5px; min-width: 0; overflow-wrap: anywhere; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.opt-check svg { width: 15px; height: 15px; color: var(--accent); }
+.mine { font-size: 11.5px; color: var(--accent); background: var(--accent-soft); border-radius: 6px; padding: 0 6px; line-height: 1.7; }
+.opt-bar { height: 6px; border-radius: 99px; background: var(--line); overflow: hidden; display: block; }
+.opt-bar i { display: block; height: 100%; background: var(--fg-2); border-radius: 99px; }
+.opt-pct { font-size: 13px; color: var(--muted); text-align: right; }
+.opt-odds { justify-self: end; font-size: 14.5px; font-weight: 600; padding: 0 7px; border: 1px solid var(--line-2); border-radius: 7px; line-height: 1.75; min-width: 54px; text-align: center; }
+.opt.is-win .opt-label { font-weight: 700; }
+.opt.is-win .opt-bar i { background: var(--accent); }
+.opt.is-win .opt-odds { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.opt.is-lose { color: var(--muted); }
+.opt.is-lose .opt-bar i { background: var(--faint); }
+.qfoot { display: flex; align-items: center; justify-content: space-between; gap: 10px 12px; flex-wrap: wrap; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.qfoot-info { font-size: 12.5px; color: var(--muted); display: flex; gap: 2px 8px; flex-wrap: wrap; align-items: center; min-width: 0; }
+.qfoot-info b { font-weight: 600; color: var(--fg-2); }
+.qfoot-info b.up { color: var(--up); }
+.qfoot-info b.down { color: var(--down); }
+.qfoot-act { display: flex; gap: 8px; margin-left: auto; }
+@media (max-width: 560px) {
+  .qcard { padding: 16px 16px 12px; }
+  .opt, .opt-head { grid-template-columns: minmax(0, 1fr) 40px 58px; row-gap: 6px; }
+  .opt-head span:nth-child(2) { display: none; }
+  .opt .opt-bar { grid-column: 1 / -1; grid-row: 2; }
+  .qtitle { font-size: 18.5px; }
+}
+.empty { border: 1px dashed var(--line-2); border-radius: var(--r); padding: 40px 20px; text-align: center; color: var(--muted); }
+.empty b { display: block; color: var(--fg); font-size: 16px; margin-bottom: 6px; font-weight: 600; }
+.empty .btn { margin-top: 16px; }
+.skel { pointer-events: none; }
+.sk { height: 12px; border-radius: 6px; background: var(--panel); margin: 12px 0; animation: pulse 1.4s ease-in-out infinite; }
+.sk-1 { width: 30%; } .sk-2 { width: 72%; height: 18px; } .sk-3 { width: 100%; }
+
+.foot { margin-top: 44px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; }
+.foot a { color: var(--muted); }
+
+/* ---------- 抽屜 ---------- */
+.scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 40; animation: fade .18s ease; }
+.sheet { position: fixed; top: 0; right: 0; bottom: 0; width: min(580px, 100%); background: var(--bg); z-index: 50; display: flex; flex-direction: column; box-shadow: var(--shadow); border-left: 1px solid var(--line); animation: slide .24s cubic-bezier(.2,.8,.2,1); }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line);
+  padding: calc(10px + env(safe-area-inset-top, 0px)) max(14px, env(safe-area-inset-right, 0px)) 10px 22px; }
+.sheet-head h2 { font-size: 15px; margin: 0; font-weight: 600; letter-spacing: .04em; }
+.sheet-body { overflow: auto; flex: 1; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  padding: 20px max(22px, env(safe-area-inset-right, 0px)) calc(32px + env(safe-area-inset-bottom, 0px)) 22px; }
+@media (max-width: 640px) { .sheet { width: 100%; border-left: 0; } .sheet-head { padding-left: max(16px, env(safe-area-inset-left, 0px)); } .sheet-body { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); } }
+@keyframes slide { from { transform: translateX(28px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+.sec { margin-top: 28px; }
+.sec.first { margin-top: 0; }
+.sec h4 { font-size: 12.5px; letter-spacing: .12em; color: var(--muted); font-weight: 500; margin: 0 0 12px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.h4-note { letter-spacing: 0; color: var(--faint); font-size: 12px; }
+.kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 18px; margin: 0; font-size: 14px; }
+.kv dt { color: var(--muted); white-space: nowrap; }
+.kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.kv dd .muted { margin-left: 6px; }
+.d-bg { color: var(--fg-2); font-size: 14.5px; margin: 0 0 14px; }
+.d-kv { padding: 14px 16px; border-radius: 12px; background: var(--panel); }
+
+.result-box { margin-top: 20px; border: 1px solid var(--accent); border-radius: var(--r); padding: 16px 18px; background: var(--accent-soft); }
+.result-box.is-void { border-color: var(--line-2); background: var(--panel); }
+.result-ans { display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-weight: 700; font-size: 21px; margin-top: 6px; }
+.result-ans svg { width: 20px; height: 20px; color: var(--accent); flex: none; }
+.result-note { margin: 8px 0 0; font-size: 14px; color: var(--fg-2); }
+.result-score { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line-2); font-size: 14px; }
+.result-score b { font-size: 18px; }
+
+.dopts { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 4px; }
+.dopt { padding: 10px 0; border-top: 1px dashed var(--line); }
+.dopt:first-child { border-top: 0; padding-top: 0; }
+.dopt-top { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 14px; align-items: baseline; }
+.dopt-label { font-weight: 500; overflow-wrap: anywhere; }
+.dopt-p { font-size: 13px; color: var(--muted); }
+.dopt-o { font-size: 16px; font-weight: 600; min-width: 46px; text-align: right; }
+.dopt .opt-bar { margin-top: 8px; height: 4px; }
+.dopt-r { margin: 6px 0 0; font-size: 13px; color: var(--muted); }
+.mybets { margin-top: 18px; }
+.betrow { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.betrow:first-of-type { border-top: 0; }
+.betrow-r { text-align: right; font-size: 13px; }
+.betrow-r b { font-size: 16px; }
+
+.brief { font-size: 14.5px; color: var(--fg-2); margin: 0; }
+.facts { margin: 12px 0 0; padding-left: 18px; font-size: 13.5px; color: var(--fg-2); }
+.facts li { margin: 5px 0; }
+.note-line { font-size: 13px; color: var(--warn); margin: 10px 0 0; }
+.sources { display: grid; gap: 2px; margin-top: 12px; }
+.sources a { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 13px; color: var(--fg-2); text-decoration: none; padding: 5px 0; }
+.sources a:hover span:nth-child(2) { text-decoration: underline; }
+.sources svg { width: 14px; height: 14px; color: var(--muted); }
+.sources span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.sources .host { font-size: 12px; color: var(--faint); }
+
+.timeline { list-style: none; margin: 0 0 14px; padding: 0 0 0 16px; border-left: 2px solid var(--line); display: grid; gap: 14px; }
+.tl-item { position: relative; }
+.tl-item::before { content: ""; position: absolute; left: -22px; top: 7px; width: 10px; height: 10px; border-radius: 50%; background: var(--bg); border: 2px solid var(--line-2); }
+.tl-item.is-bet::before { border-color: var(--accent); }
+.tl-item.is-result::before { background: var(--accent); border-color: var(--accent); }
+.tl-meta { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+.tl-meta .link-btn { margin-left: auto; }
+.tl-text { white-space: pre-wrap; font-size: 14.5px; margin-top: 3px; overflow-wrap: anywhere; }
+.tl-item.is-bet .tl-text, .tl-item.is-result .tl-text { font-size: 13.5px; color: var(--fg-2); }
+.empty-notes { margin: 0 0 12px; }
+.composer textarea { width: 100%; min-height: 96px; resize: vertical; border: 1px solid var(--line-2); border-radius: 12px; padding: 12px 14px; background: var(--bg); line-height: 1.65; }
+.composer textarea:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+.composer-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 8px; }
+.manage-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.sheet-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 22px; flex-wrap: wrap; }
+
+/* ---------- 下注 ---------- */
+.computing { display: flex; align-items: center; gap: 14px; padding: 48px 4px; color: var(--fg-2); }
+.computing b { font-weight: 600; }
+.spinner { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line-2); border-top-color: var(--accent); animation: spin .8s linear infinite; flex: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.lockbar { display: flex; align-items: center; gap: 6px 10px; flex-wrap: wrap; font-size: 13.5px; padding: 10px 14px; border-radius: 12px; background: var(--accent-soft); }
+.lockbar svg { width: 16px; height: 16px; color: var(--accent); }
+.lockbar b { color: var(--accent); font-size: 15px; }
+.lockbar .muted { font-size: 12.5px; }
+.lockbar.is-expired { background: var(--panel); }
+.lockbar.is-expired svg { color: var(--muted); }
+.lockbar .btn { margin-left: auto; }
+.warn-box { margin: 12px 0 0; font-size: 13px; color: var(--warn); border: 1px solid currentColor; border-radius: 10px; padding: 8px 12px; }
+.pick { border: 0; padding: 0; margin: 18px 0 0; display: grid; gap: 8px; min-width: 0; }
+.pick legend { font-size: 13px; color: var(--muted); margin-bottom: 8px; padding: 0; }
+.pick-opt { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 12px; align-items: center; border: 1px solid var(--line-2); border-radius: 12px; padding: 12px 14px; cursor: pointer; transition: border-color .12s, background .12s; }
+.pick-opt:hover { border-color: var(--fg-2); }
+.pick-opt:has(input:checked) { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: var(--accent-soft); }
+.pick-opt input { accent-color: var(--accent); width: 18px; height: 18px; margin: 0; }
+.pick-main { min-width: 0; }
+.pick-label { font-weight: 500; overflow-wrap: anywhere; }
+.pick-reason { display: block; font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.pick-odds { text-align: right; }
+.pick-odds b { font-size: 19px; display: block; line-height: 1.2; }
+.pick-odds small { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+.stake { margin-top: 20px; }
+.stake-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+.stake-head label { font-size: 13px; color: var(--muted); }
+.stake-head b { color: var(--fg); }
+.stake-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.stake-row input[type=number] { width: 120px; height: 46px; font-size: 20px; font-weight: 600; text-align: center; border: 1px solid var(--line-2); border-radius: 12px; background: var(--bg); }
+.stake-row input[type=number]:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { height: 34px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line-2); background: transparent; cursor: pointer; font-family: var(--font-num); font-size: 13px; color: var(--fg-2); }
+.chip:hover { background: var(--hover); color: var(--fg); }
+input[type=range] { width: 100%; margin: 14px 0 0; accent-color: var(--accent); }
+.preview { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+.pv { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; min-width: 0; }
+.pv span { font-size: 12px; color: var(--muted); display: block; }
+.pv b { font-size: 22px; font-weight: 600; display: block; margin-top: 2px; line-height: 1.3; }
+.pv em { font-style: normal; font-size: 13px; }
+.pv.win em { color: var(--up); }
+.pv.lose em { color: var(--down); }
+.fine { font-size: 12.5px; color: var(--muted); margin: 14px 0 18px; }
+
+/* 注單 */
+.ticket { border: 1px solid var(--line-2); border-radius: 16px; overflow: hidden; background: var(--bg); }
+.ticket-in { padding: 18px 20px 16px; }
+.ticket-top { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); letter-spacing: .14em; }
+.ticket .qtitle { font-size: 18px; margin: 8px 0 14px; }
+.perf { position: relative; height: 0; border-top: 2px dashed var(--line-2); margin: 0 16px; }
+.perf::before, .perf::after { content: ""; position: absolute; top: -11px; width: 20px; height: 20px; border-radius: 50%; background: var(--bg); border: 1px solid var(--line-2); }
+.perf::before { left: -27px; }
+.perf::after { right: -27px; }
+.ticket-out { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 16px 20px 18px; }
+.ticket-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; flex-wrap: wrap; }
+
+/* ---------- 表單 ---------- */
+.field { display: grid; gap: 6px; margin-top: 16px; min-width: 0; }
+.field label { font-size: 13px; font-weight: 500; color: var(--fg-2); }
+.opt-note { font-weight: 400; color: var(--faint); margin-left: 8px; font-size: 12px; }
+.hint { font-size: 12px; color: var(--muted); margin: 0; }
+.field input:not([type=radio]), .field textarea { width: 100%; min-height: 42px; border: 1px solid var(--line-2); border-radius: 10px; padding: 9px 12px; background: var(--bg); }
+.field textarea { resize: vertical; line-height: 1.6; }
+.field input:focus, .field textarea:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+.field input:disabled { background: var(--panel); color: var(--muted); }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+@media (max-width: 520px) { .row2 { grid-template-columns: 1fr; } }
+.optlist { display: grid; gap: 8px; }
+.optrow { display: grid; grid-template-columns: 26px minmax(0, 1fr) 32px; gap: 8px; align-items: center; }
+.optrow .idx { font-family: var(--font-num); color: var(--muted); text-align: center; font-size: 13px; }
+.optrow input { width: 100%; height: 42px; border: 1px solid var(--line-2); border-radius: 10px; padding: 0 12px; background: var(--bg); }
+.optrow input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+.optrow input:disabled { background: var(--panel); color: var(--muted); }
+#optAdd { justify-self: start; margin-top: 2px; }
+.form-err { color: var(--up); font-size: 13px; min-height: 1em; margin-top: 12px; }
+.lead { margin: 0; color: var(--fg-2); font-size: 14.5px; }
+.steps { margin: 14px 0 0; padding-left: 20px; font-size: 14px; color: var(--fg-2); display: grid; gap: 6px; }
+.steps b { color: var(--fg); }
+
+/* 設定、規則 */
+.qr { width: 196px; max-width: 100%; margin: 12px 0; padding: 8px; background: #ffffff; border-radius: 12px; border: 1px solid var(--line-2); }
+.qr svg { width: 100%; height: auto; }
+.qr p { color: #555; margin: 4px; }
+.rules ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 14.5px; color: var(--fg-2); }
+.rules p { font-size: 14.5px; color: var(--fg-2); margin: 0; }
+.example { margin-top: 14px; padding: 14px 16px; border-radius: 12px; background: var(--panel); }
+.example p { margin-top: 6px; }
+.example .preview { margin: 12px 0; }
+
+/* ---------- 確認視窗、通知 ---------- */
+.confirm { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; background: var(--scrim); padding: 16px; animation: fade .15s ease; }
+.confirm-card { background: var(--bg); border: 1px solid var(--line-2); border-radius: 16px; padding: 22px; width: min(420px, 100%); box-shadow: var(--shadow); }
+.confirm-card h3 { margin: 0 0 8px; font-size: 17px; }
+.confirm-card p { margin: 0; color: var(--fg-2); font-size: 14px; white-space: pre-line; }
+.confirm-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+.toasts { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 90; display: grid; gap: 8px; width: min(calc(100vw - 32px), 440px); pointer-events: none; }
+.toast { background: var(--fg); color: var(--bg); padding: 12px 16px; border-radius: 12px; font-size: 14px; box-shadow: var(--shadow); animation: rise .2s ease; transition: opacity .3s, transform .3s; }
+.toast.err { background: var(--up); color: #fff; }
+.toast.out { opacity: 0; transform: translateY(6px); }
+@keyframes rise { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="./" aria-label="時事預測所 首頁">
+      <svg class="brand-mark" viewBox="0 0 28 28" aria-hidden="true"><rect class="bm-bg" x="1" y="1" width="26" height="26" rx="8"/><path class="bm-arc" d="M7.5 18.5a6.5 6.5 0 0 1 13 0"/><path class="bm-needle" d="M14 18.5l4-5"/><circle class="bm-dot" cx="14" cy="18.5" r="1.8"/></svg>
+      <span class="brand-name">時事預測所</span>
+    </a>
+    <div class="top-actions">
+      <span class="sync" id="sync" data-state="busy">載入中</span>
+      <button class="icon-btn" id="btnRules" type="button" aria-label="規則說明" title="規則說明" data-icon="help"></button>
+      <button class="icon-btn" id="btnTheme" type="button" aria-label="切換白天／黑夜模式" title="切換白天／黑夜模式"></button>
+      <button class="icon-btn" id="btnSettings" type="button" aria-label="設定" title="設定" data-icon="settings"></button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="wallet" aria-label="我的點數">
+    <div class="wallet-main">
+      <div class="eyebrow">可用點數</div>
+      <div class="big num" id="wAvail">…</div>
+      <div class="wallet-sub" id="wDaily">載入中</div>
+    </div>
+    <dl class="wallet-stats">
+      <div><dt>總點數</dt><dd class="num" id="wTotal">—</dd></div>
+      <div><dt>押注中</dt><dd class="num" id="wPlay">—</dd></div>
+      <div><dt>已實現盈虧</dt><dd class="num" id="wPnl">—</dd></div>
+      <div><dt>命中率</dt><dd class="num" id="wHit">—</dd></div>
+    </dl>
+  </section>
+
+  <div class="banner" id="banner" hidden></div>
+
+  <nav class="toolbar" aria-label="題目篩選">
+    <div class="seg" id="seg" role="tablist">
+      <button type="button" role="tab" data-filter="all">全部<span class="cnt"></span></button>
+      <button type="button" role="tab" data-filter="open">可下注<span class="cnt"></span></button>
+      <button type="button" role="tab" data-filter="pending">待公布<span class="cnt"></span></button>
+      <button type="button" role="tab" data-filter="done">已公布<span class="cnt"></span></button>
+    </div>
+    <div class="tool-actions">
+      <button class="btn btn-ghost" id="btnAsk" type="button"><span data-icon="refresh"></span>請 Claude 更新</button>
+      <button class="btn btn-primary" id="btnNew" type="button"><span data-icon="plus"></span>新增問題</button>
+    </div>
+  </nav>
+  <p class="worker-line" id="workerLine"></p>
+
+  <section class="list" id="list" aria-live="polite"></section>
+
+  <footer class="foot">
+    <span>資料存在 GitHub 的 <a href="https://github.com/WWadeHong/hexacalc/tree/forecast-data" target="_blank" rel="noopener">forecast-data 分支</a>；你的注單與筆記用你的密碼加密。</span>
+    <a href="https://github.com/WWadeHong/hexacalc/tree/main/forecast" target="_blank" rel="noopener">原始碼</a>
+  </footer>
+</main>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden>
+  <div class="sheet-head"><h2 id="sheetTitle"></h2><button class="icon-btn" type="button" data-act="close" aria-label="關閉" data-icon="x"></button></div>
+  <div class="sheet-body" id="sheetBody"></div>
+</aside>
+<div class="confirm" id="confirm" hidden>
+  <div class="confirm-card" role="alertdialog" aria-modal="true" aria-labelledby="cfTitle" aria-describedby="cfBody">
+    <h3 id="cfTitle"></h3><p id="cfBody"></p>
+    <div class="confirm-actions"><button class="btn" type="button" id="cfNo">取消</button><button class="btn btn-primary" type="button" id="cfYes">確定</button></div>
+  </div>
+</div>
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js" defer></script>
+<script>
+(() => {
+'use strict';
+
+/* =====================================================================
+   1. 基本設定（要調整規則，改這裡就好）
+   ===================================================================== */
+const CFG = {
+  repo: 'WWadeHong/hexacalc',   // 資料所在的 GitHub repo
+  branch: 'forecast-data',      // 資料分支（board.json / claude.json / vault.json）
+  startPoints: 100,             // 起始點數
+  dailyPoints: 10,              // 每天台灣時間 00:00 發放的點數
+  lockMinutes: 10,              // 按「我要下注」後賠率鎖定的分鐘數
+  probMin: 0.02, probMax: 0.98, // 機率上下限 → 賠率 1.02～1.98
+  pollSeconds: 60,              // 自動同步間隔（秒）
+  workerEveryHours: 2,          // Claude 排程檢查頻率（只用於顯示）
+  maxOptions: 6,                // 每題最多幾個答案
+};
+const LS ={ token: 'fc.token', pass: 'fc.pass', theme: 'fc.theme', filter: 'fc.filter', seen: 'fc.seen', day: 'fc.day' };
+const CATS = ['總經', '半導體', '科技', '金融市場', '政治', '國際', '運動', '其他'];
+
+/* =====================================================================
+   2. 小工具
+   ===================================================================== */
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const safeUrl = u => { try { const x = new URL(String(u)); return /^https?:$/.test(x.protocol) ? x.href : null; } catch (e) { return null; } };
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} },
+};
+const uid = p => p + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const clone = o => JSON.parse(JSON.stringify(o));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const fmtPts = n => Math.round(Number(n) || 0).toLocaleString('en-US');
+const signed = n => (n > 0 ? '+' : n < 0 ? '−' : '±') + fmtPts(Math.abs(n));
+const pct = p => Math.round(p * 100) + '%';
+const pnlClass = n => (n > 0 ? 'up' : n < 0 ? 'down' : '');
+
+const sv = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+const ICON = {
+  sun: sv('<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2.5 12h2M19.5 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),
+  moon: sv('<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>'),
+  help: sv('<circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8 1c0 1.7-2.4 2.2-2.4 3.7"/><path d="M12 17.2h.01"/>'),
+  settings: sv('<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>'),
+  plus: sv('<path d="M12 5v14M5 12h14"/>'),
+  refresh: sv('<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v4.5h-4.5"/>'),
+  check: sv('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),
+  flag: sv('<path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/>'),
+  lock: sv('<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'),
+  x: sv('<path d="M6 6l12 12M18 6L6 18"/>'),
+  ext: sv('<path d="M14 5h5v5"/><path d="M19 5l-8 8"/><path d="M18 14v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h4"/>'),
+};
+
+/* ---- 時間（一律以台灣時間 UTC+8 顯示；台灣沒有日光節約時間） ---- */
+const DAY = 864e5, H8 = 8 * 3600e3;
+function tp(ms) {
+  const d = new Date(ms + H8), z = n => String(n).padStart(2, '0');
+  return { year: String(d.getUTCFullYear()), month: z(d.getUTCMonth() + 1), day: z(d.getUTCDate()), hour: z(d.getUTCHours()), minute: z(d.getUTCMinutes()) };
+}
+const dayIdx = ms => Math.floor((ms + H8) / DAY);
+const dayIdxOf = s => { const [y, m, d] = String(s).split('-').map(Number); return Math.floor(Date.UTC(y, m - 1, d) / DAY); };
+function fmtTime(iso) { const ms = Date.parse(iso); if (!isFinite(ms)) return '—'; const p = tp(ms); return `${+p.month}/${+p.day} ${p.hour}:${p.minute}`; }
+function todayStr() { const p = tp(Date.now()); return `${p.year}-${p.month}-${p.day}`; }
+function nowIso(ms = Date.now()) { const p = tp(ms); const sec = String(new Date(ms).getUTCSeconds()).padStart(2, '0'); return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}:${sec}+08:00`; }
+function toInput(iso) { const ms = Date.parse(iso); if (!isFinite(ms)) return ''; const p = tp(ms); return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`; }
+const fromInput = v => (v ? `${v}:00+08:00` : '');
+function leftText(ms) {
+  if (ms <= 0) return '已截止';
+  const m = Math.floor(ms / 6e4), d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60), mm = m % 60;
+  if (d >= 1) return `剩 ${d} 天 ${h} 小時`;
+  if (h >= 1) return `剩 ${h} 小時 ${mm} 分`;
+  return `剩 ${Math.max(1, mm)} 分`;
+}
+function agoText(iso) {
+  const ms = Date.now() - Date.parse(iso); if (!isFinite(ms)) return '';
+  const m = Math.round(ms / 6e4); if (m < 1) return '剛剛'; if (m < 60) return `${m} 分鐘前`;
+  const h = Math.round(m / 60); if (h < 48) return `${h} 小時前`;
+  return `${Math.round(h / 24)} 天前`;
+}
+function untilMidnight() {
+  const next = (dayIdx(Date.now()) + 1) * DAY - H8, m = Math.max(1, Math.ceil((next - Date.now()) / 6e4));
+  return m >= 60 ? `${Math.floor(m / 60)} 小時 ${m % 60} 分後` : `${m} 分後`;
+}
+function defaultDeadline() { const p = tp(Date.now() + 7 * DAY); return `${p.year}-${p.month}-${p.day}T23:59:00+08:00`; }
+
+/* =====================================================================
+   3. 計分規則
+   Claude 估計答案成真的機率 p → 賠率 = 2 − p（1.02～1.98）
+   猜對：拿回 押注 × 賠率（賺 押注 × (1 − p)）
+   猜錯：拿回 押注 × (賠率 − 1)（只賠 押注 × p，不會全部歸零）
+   作廢：全額退回
+   以 Claude 的機率來看每注期望值為 0，只有比 Claude 準，點數才會長期成長。
+   ===================================================================== */
+const clampP = p => Math.min(CFG.probMax, Math.max(CFG.probMin, p));
+const oddsOf = p => Math.round((2 - p) * 100) / 100;
+function settle(stake, odds, outcome) {
+  if (outcome === 'win') { const g = Math.round(stake * (odds - 1)); return { back: stake + g, pnl: g }; }
+  if (outcome === 'lose') { const l = Math.min(stake, Math.max(1, Math.round(stake * (2 - odds)))); return { back: stake - l, pnl: -l }; }
+  return { back: stake, pnl: 0 };
+}
+
+/* =====================================================================
+   4. 狀態
+   ===================================================================== */
+const S = {
+  token: store.get(LS.token) || '',
+  pass: store.get(LS.pass) || '',
+  tokenBad: false,
+  mode: 'loading',                 // loading | guest | locked | ready | error
+  board: { questions: [], requests: [] }, boardSha: null, boardTag: null,
+  claude: { worker: {}, research: {}, results: {} }, claudeTag: null,
+  vault: null, vaultBlob: null, vaultSha: null, vaultTag: null,
+  vaultKey: null, vaultSaltB64: null, vaultIter: 0, vaultKeyPass: null,
+  writeVer: 0, stale: new Set(),
+  filter: ['all', 'open', 'pending', 'done'].includes(store.get(LS.filter)) ? store.get(LS.filter) : 'all',
+  lock: null, sheet: null, lastFocus: null,
+  saving: 0, polling: false, syncErr: null,
+  fresh: new Set(),
+};
+const canWrite = () => S.mode === 'ready' && !!S.vault;
+
+/* =====================================================================
+   5. GitHub 資料層
+   board.json  ：題目、更新請求（網頁寫）
+   claude.json ：Claude 蒐集的資料、機率、結果（Claude 排程寫）
+   vault.json  ：加密的注單與筆記（網頁寫）
+   ===================================================================== */
+const te = new TextEncoder(), td = new TextDecoder();
+function b64FromBytes(u8) { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); }
+function bytesFromB64(b) { const s = atob(String(b).replace(/\s+/g, '')); const u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; }
+const b64FromText = t => b64FromBytes(te.encode(t));
+const textFromB64 = b => td.decode(bytesFromB64(b));
+
+class GhError extends Error { constructor(status, message) { super(message); this.status = status; } }
+const useApi = () => !!S.token && !S.tokenBad;
+
+async function ghFetch(path, { method = 'GET', body, etag } = {}) {
+  const headers = { Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', Authorization: 'Bearer ' + S.token };
+  if (etag) headers['If-None-Match'] = etag;
+  if (body) headers['Content-Type'] = 'application/json';
+  try { return await fetch('https://api.github.com' + path, { method, headers, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' }); }
+  catch (e) { throw new GhError(0, '網路連線失敗'); }
+}
+async function ghMessage(res) { try { const j = await res.json(); return j.message || res.statusText; } catch (e) { return res.statusText || ('HTTP ' + res.status); } }
+
+async function readJson(name, etag) {
+  if (!useApi()) {   // 訪客：讀公開的檔案（可能有幾分鐘快取）
+    let res;
+    try { res = await fetch(`https://raw.githubusercontent.com/${CFG.repo}/${CFG.branch}/${name}?v=${Date.now()}`, { cache: 'no-store' }); }
+    catch (e) { throw new GhError(0, '網路連線失敗'); }
+    if (res.status === 404) return { missing: true };
+    if (!res.ok) throw new GhError(res.status, '讀取失敗');
+    return { data: await res.json() };
+  }
+  const res = await ghFetch(`/repos/${CFG.repo}/contents/${name}?ref=${CFG.branch}`, { etag });
+  if (res.status === 304) return { same: true };
+  if (res.status === 404) return { missing: true };
+  if (!res.ok) throw new GhError(res.status, await ghMessage(res));
+  const j = await res.json();
+  if (S.stale.has(j.sha)) return { same: true };
+  return { data: JSON.parse(textFromB64(j.content)), sha: j.sha, etag: res.headers.get('ETag') };
+}
+
+async function writeJson(name, data, sha, message) {
+  const body = { message, branch: CFG.branch, content: b64FromText(JSON.stringify(data, null, 2) + '\n') };
+  if (sha) body.sha = sha;
+  const res = await ghFetch(`/repos/${CFG.repo}/contents/${name}`, { method: 'PUT', body });
+  if (res.status === 409 || res.status === 422) { const e = new GhError(res.status, await ghMessage(res)); e.conflict = true; throw e; }
+  if (!res.ok) throw new GhError(res.status, await ghMessage(res));
+  const j = await res.json();
+  if (sha) S.stale.add(sha);
+  return j.content.sha;
+}
+
+function normBoard(b) {
+  b = b && typeof b === 'object' ? b : {};
+  const qs = Array.isArray(b.questions) ? b.questions.filter(q => q && typeof q.id === 'string' && typeof q.title === 'string' && Array.isArray(q.options) && q.options.length >= 2) : [];
+  return { version: 1, updatedAt: b.updatedAt || null, questions: qs, requests: Array.isArray(b.requests) ? b.requests.filter(r => r && r.at) : [] };
+}
+function normClaude(c) {
+  c = c && typeof c === 'object' ? c : {};
+  const obj = x => (x && typeof x === 'object' && !Array.isArray(x) ? x : {});
+  return { version: 1, worker: obj(c.worker), research: obj(c.research), results: obj(c.results) };
+}
+function normVault(v) {
+  v = v && typeof v === 'object' ? v : {};
+  return {
+    startDate: /^\d{4}-\d{2}-\d{2}$/.test(v.startDate) ? v.startDate : todayStr(),
+    bets: Array.isArray(v.bets) ? v.bets.filter(b => b && b.qid && b.optionId && b.stake > 0 && b.odds > 1) : [],
+    notes: v.notes && typeof v.notes === 'object' && !Array.isArray(v.notes) ? v.notes : {},
+  };
+}
+
+async function refreshBoard() {
+  const v0 = S.writeVer, r = await readJson('board.json', S.boardTag);
+  if (r.same || S.writeVer !== v0) return false;
+  if (r.missing) { const had = S.board.questions.length > 0; S.board = normBoard(null); S.boardSha = null; S.boardTag = null; return had; }
+  S.board = normBoard(r.data); S.boardSha = r.sha || null; S.boardTag = r.etag || null;
+  return true;
+}
+async function refreshClaude() {
+  const r = await readJson('claude.json', S.claudeTag);
+  if (r.same) return false;
+  S.claude = normClaude(r.missing ? null : r.data); S.claudeTag = r.etag || null;
+  return true;
+}
+async function refreshVault() {
+  const v0 = S.writeVer, r = await readJson('vault.json', S.vaultTag);
+  if (r.same || S.writeVer !== v0) return false;
+  if (r.missing) { S.vaultBlob = null; S.vaultSha = null; S.vaultTag = null; return true; }
+  if (useApi() && S.pass) {
+    try { const v = await openVault(r.data, S.pass); if (S.writeVer !== v0) return false; S.vault = v; }
+    catch (e) { S.vault = null; S.mode = 'locked'; }
+  }
+  S.vaultBlob = r.data; S.vaultSha = r.sha || null; S.vaultTag = r.etag || null;
+  return true;
+}
+
+/* =====================================================================
+   6. 加密保險箱（注單、筆記）：AES-256-GCM，金鑰由密碼經 PBKDF2 推導
+   ===================================================================== */
+const KDF_ITER = 250000;
+async function deriveKey(pass, salt, iter) {
+  const base = await crypto.subtle.importKey('raw', te.encode(pass), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+async function openVault(blob, pass) {
+  if (!blob || !blob.ct || !blob.iv || !blob.salt) throw new Error('加密資料格式不正確');
+  const iter = Number(blob.iter) || KDF_ITER;
+  let key = S.vaultKey;
+  if (!key || blob.salt !== S.vaultSaltB64 || iter !== S.vaultIter || pass !== S.vaultKeyPass) key = await deriveKey(pass, bytesFromB64(blob.salt), iter);
+  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytesFromB64(blob.iv) }, key, bytesFromB64(blob.ct));
+  S.vaultKey = key; S.vaultSaltB64 = blob.salt; S.vaultIter = iter; S.vaultKeyPass = pass;
+  return normVault(JSON.parse(td.decode(pt)));
+}
+async function sealVault(obj) {
+  if (!S.vaultKey || S.vaultKeyPass !== S.pass) {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    S.vaultKey = await deriveKey(S.pass, salt, KDF_ITER); S.vaultSaltB64 = b64FromBytes(salt); S.vaultIter = KDF_ITER; S.vaultKeyPass = S.pass;
+  }
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, S.vaultKey, te.encode(JSON.stringify(obj))));
+  return { v: 1, about: '時事預測所：加密的注單與思路筆記（AES-256-GCM / PBKDF2-SHA256），需在網站輸入密碼才能解開。', kdf: 'PBKDF2-SHA256', iter: S.vaultIter, salt: S.vaultSaltB64, iv: b64FromBytes(iv), ct: b64FromBytes(ct) };
+}
+
+/* =====================================================================
+   7. 寫入（衝突時自動重抓最新資料再套用一次）
+   ===================================================================== */
+async function mutate(kind, fn, message) {
+  setSaving(1);
+  try {
+    for (let i = 0; i < 3; i++) {
+      try {
+        if (kind === 'board') {
+          const draft = clone(S.board); fn(draft); draft.updatedAt = nowIso();
+          const sha = await writeJson('board.json', draft, S.boardSha, message);
+          S.board = draft; S.boardSha = sha; S.boardTag = null;
+        } else {
+          const draft = clone(S.vault); fn(draft);
+          const blob = await sealVault(draft);
+          const sha = await writeJson('vault.json', blob, S.vaultSha, message);
+          S.vault = draft; S.vaultBlob = blob; S.vaultSha = sha; S.vaultTag = null;
+        }
+        S.writeVer++; S.syncErr = null;
+        renderAll();
+        return true;
+      } catch (e) {
+        if (!e.conflict || i === 2) throw e;
+        if (kind === 'board') { S.boardTag = null; S.writeVer++; await refreshBoard(); }
+        else { S.vaultTag = null; S.writeVer++; await refreshVault(); if (!S.vault) throw e; }
+      }
+    }
+    return false;
+  } catch (e) {
+    S.syncErr = e;
+    toast(errMsg(e), 'err');
+    if (e.status === 401) { S.tokenBad = true; S.mode = 'guest'; renderAll(); }
+    return false;
+  } finally { setSaving(-1); }
+}
+function errMsg(e) {
+  if (!e) return '發生錯誤';
+  if (e.status === 401) return 'GitHub 權杖無效或已過期，請重新連結。';
+  if (e.status === 403) return 'GitHub 拒絕寫入：請確認權杖對 hexacalc 有 Contents「Read and write」權限。';
+  if (e.status === 404) return '找不到資料，請確認權杖可以存取 hexacalc。';
+  if (e.status === 0) return '網路連線失敗，請檢查網路後再試。';
+  if (e.conflict) return '資料同時在別的裝置被修改，請再試一次。';
+  return e.message || '發生錯誤';
+}
+
+/* =====================================================================
+   8. 推導資料（點數、狀態、賠率都由原始資料即時計算）
+   ===================================================================== */
+const qById = id => S.board.questions.find(q => q.id === id);
+const labelOf = (q, id) => ((q && q.options.find(o => o.id === id)) || {}).label || id;
+function resultOf(q) {
+  if (!q) return { optionId: 'void', by: 'void' };
+  if (q.voided) return { optionId: 'void', by: 'void', at: q.voidedAt, note: '此題已作廢，押注全額退回。' };
+  if (q.manualResult && q.manualResult.optionId) return { ...q.manualResult, by: 'manual' };
+  const r = S.claude.results[q.id];
+  if (r && r.optionId && (r.optionId === 'void' || q.options.some(o => o.id === r.optionId))) return { ...r, at: r.decidedAt, by: 'claude' };
+  return null;
+}
+function statusOf(q) {
+  const r = resultOf(q);
+  if (r) return r.optionId === 'void' ? 'void' : 'done';
+  return Date.now() < Date.parse(q.deadline) ? 'open' : 'pending';
+}
+const outcomeOf = (bet, res) => (!res ? 'open' : res.optionId === 'void' ? 'void' : res.optionId === bet.optionId ? 'win' : 'lose');
+function claudeOf(q) {
+  const r = S.claude.research[q.id];
+  if (!r || !r.probs || typeof r.probs !== 'object') return null;
+  if (q.optionsRev && Date.parse(r.updatedAt || 0) < Date.parse(q.optionsRev)) return null;
+  const raw = q.options.map(o => Math.max(0, Number(r.probs[o.id]) || 0));
+  const sum = raw.reduce((a, b) => a + b, 0);
+  if (!(sum > 0)) return null;
+  const probs = {}, odds = {};
+  q.options.forEach((o, i) => { const p = clampP(raw[i] / sum); probs[o.id] = p; odds[o.id] = oddsOf(p); });
+  return { probs, odds, at: r.updatedAt, r };
+}
+const betsOf = qid => (S.vault ? S.vault.bets.filter(b => b.qid === qid) : []);
+const notesOf = qid => (S.vault && Array.isArray(S.vault.notes[qid]) ? S.vault.notes[qid] : []);
+const pnlOf = (bets, res) => bets.reduce((s, b) => s + settle(b.stake, b.odds, outcomeOf(b, res)).pnl, 0);
+function wallet() {
+  const v = S.vault; if (!v) return null;
+  const days = Math.max(0, dayIdx(Date.now()) - dayIdxOf(v.startDate));
+  let realized = 0, inPlay = 0, wins = 0, losses = 0;
+  for (const b of v.bets) {
+    const out = outcomeOf(b, resultOf(qById(b.qid)));
+    if (out === 'open') { inPlay += b.stake; continue; }
+    realized += settle(b.stake, b.odds, out).pnl;
+    if (out === 'win') wins++; else if (out === 'lose') losses++;
+  }
+  const total = CFG.startPoints + CFG.dailyPoints * days + realized;
+  return { days, total, inPlay, available: total - inPlay, realized, wins, losses };
+}
+function pendingRequests() {
+  const h = Date.parse(S.claude.worker.handledRequestsUpTo || 0) || 0;
+  return S.board.requests.filter(r => (Date.parse(r.at) || 0) > h);
+}
+
+/* =====================================================================
+   9. 畫面
+   ===================================================================== */
+const BADGE = {
+  open: '<span class="badge b-open">可下注</span>',
+  pending: '<span class="badge b-pending">待公布</span>',
+  done: '<span class="badge b-done">已公布</span>',
+  void: '<span class="badge b-void">已作廢</span>',
+};
+function renderAll() { renderWallet(); renderBanner(); renderToolbar(); renderWorkerLine(); renderList(); renderSync(); refreshSheet(); }
+
+function renderWallet() {
+  const w = wallet();
+  if (!w) {
+    $('#wAvail').textContent = S.mode === 'loading' ? '…' : '—';
+    ['#wTotal', '#wPlay', '#wPnl', '#wHit'].forEach(id => { $(id).textContent = '—'; $(id).className = 'num'; });
+    $('#wDaily').textContent = S.mode === 'loading' ? '載入中' : S.mode === 'locked' ? '輸入密碼後顯示你的點數' : `連結 GitHub 後開始：起始 ${CFG.startPoints} 點，每天 +${CFG.dailyPoints}`;
+    return;
+  }
+  $('#wAvail').innerHTML = `${fmtPts(w.available)}<span class="unit">點</span>`;
+  $('#wTotal').textContent = fmtPts(w.total);
+  $('#wPlay').textContent = fmtPts(w.inPlay);
+  const pnl = $('#wPnl'); pnl.textContent = signed(w.realized); pnl.className = 'num ' + pnlClass(w.realized);
+  $('#wHit').textContent = w.wins + w.losses ? `${Math.round((w.wins / (w.wins + w.losses)) * 100)}%` : '—';
+  $('#wDaily').innerHTML = w.days > 0
+    ? `<span class="pill on">今日 +${CFG.dailyPoints} 已入帳</span><span>下一次 ${untilMidnight()}</span>`
+    : `<span class="pill">每天 00:00 自動 +${CFG.dailyPoints}</span><span>第一次 ${untilMidnight()}</span>`;
+}
+
+function renderBanner() {
+  const el = $('#banner'); let html = '';
+  if (S.mode === 'guest') html = `<p>${S.tokenBad ? 'GitHub 權杖已失效，請重新連結。' : '目前是瀏覽模式。連結你的 GitHub（約 2 分鐘）就能新增題目、下注和記筆記。'}</p><button class="btn btn-primary" type="button" data-act="setup">連結 GitHub</button>`;
+  else if (S.mode === 'locked') html = '<p>輸入加密密碼，解鎖你的注單與筆記。</p><button class="btn btn-primary" type="button" data-act="setup">輸入密碼</button>';
+  else if (S.mode === 'error') html = `<p>暫時讀不到資料：${esc(errMsg(S.syncErr))}</p><button class="btn" type="button" data-act="retry">重試</button>`;
+  el.innerHTML = html; el.hidden = !html;
+}
+
+function groupOf(q) { const s = statusOf(q); return s === 'void' ? 'done' : s; }
+function renderToolbar() {
+  const qs = S.board.questions, cnt = { all: qs.length, open: 0, pending: 0, done: 0 };
+  qs.forEach(q => cnt[groupOf(q)]++);
+  $$('#seg [data-filter]').forEach(b => { const f = b.dataset.filter; b.setAttribute('aria-selected', String(f === S.filter)); $('.cnt', b).textContent = cnt[f] || ''; });
+}
+
+function renderWorkerLine() {
+  const w = S.claude.worker, last = w.lastCheckAt || w.lastRunAt, pend = pendingRequests().length;
+  let html = '<span class="dot" aria-hidden="true"></span>';
+  html += last ? `<span>Claude 上次上網檢查 ${fmtTime(last)}（${agoText(last)}）</span>` : '<span>Claude 尚未開始檢查</span>';
+  html += `<span class="sep">·</span><span>約每 ${CFG.workerEveryHours} 小時更新資料與公布結果</span>`;
+  if (pend) html += `<span class="sep">·</span><b>已排入 ${pend} 個請求</b>`;
+  if (w.summary) html += `<span class="worker-sum">${esc(w.summary)}</span>`;
+  $('#workerLine').innerHTML = html;
+}
+
+function sortQs(list) {
+  const order = { open: 0, pending: 1, done: 2, void: 3 };
+  const t = (q, s) => s === 'open' ? Date.parse(q.deadline) : s === 'pending' ? Date.parse(q.resolveAt || q.deadline) : -(Date.parse((resultOf(q) || {}).at) || 0);
+  return list.map(q => ({ q, s: statusOf(q) })).sort((a, b) => order[a.s] - order[b.s] || t(a.q, a.s) - t(b.q, b.s)).map(x => x.q);
+}
+
+function renderList() {
+  const el = $('#list');
+  if (S.mode === 'loading' && !S.board.questions.length) {
+    el.innerHTML = '<div class="qcard skel"><div class="sk sk-1"></div><div class="sk sk-2"></div><div class="sk sk-3"></div><div class="sk sk-3"></div></div>'.repeat(2);
+    return;
+  }
+  const list = sortQs(S.board.questions.filter(q => S.filter === 'all' || groupOf(q) === S.filter));
+  if (!list.length) {
+    const msg = {
+      all: ['還沒有題目', '按「新增問題」開出第一題，例如「台積電 11 月營收年增會超過 40% 嗎？」'],
+      open: ['目前沒有可下注的題目', '新增一題，或等 Claude 評估完成。'],
+      pending: ['沒有等待公布的題目', '截止下注、還沒公布結果的題目會出現在這裡。'],
+      done: ['還沒有公布結果的題目', '結果出爐後，可以在這裡對答案。'],
+    }[S.filter];
+    el.innerHTML = `<div class="empty"><b>${msg[0]}</b>${msg[1]}${S.filter === 'all' && canWrite() ? '<div><button class="btn btn-primary" type="button" data-act="new">新增問題</button></div>' : ''}</div>`;
+    return;
+  }
+  el.innerHTML = list.map(cardHTML).join('');
+}
+
+function cardHTML(q) {
+  const st = statusOf(q), res = resultOf(q), cv = claudeOf(q), bets = betsOf(q.id), now = Date.now();
+  const stake = {}; let total = 0;
+  bets.forEach(b => { stake[b.optionId] = (stake[b.optionId] || 0) + b.stake; total += b.stake; });
+  let when = '';
+  if (st === 'open') when = `${leftText(Date.parse(q.deadline) - now)}<span class="sep">·</span>${fmtTime(q.deadline)} 截止`;
+  else if (st === 'pending') when = `已截止<span class="sep">·</span>預計 ${fmtTime(q.resolveAt || q.deadline)} 公布`;
+  else if (res && res.at) when = `${fmtTime(res.at)} ${st === 'void' ? '作廢' : '公布'}`;
+  const opts = q.options.map(o => {
+    const p = cv ? cv.probs[o.id] : null, cls = ['opt'];
+    if (res && res.optionId !== 'void') cls.push(res.optionId === o.id ? 'is-win' : 'is-lose');
+    return `<li class="${cls.join(' ')}">
+      <span class="opt-label">${res && res.optionId === o.id ? `<span class="opt-check">${ICON.check}</span>` : ''}<span>${esc(o.label)}</span>${stake[o.id] ? `<span class="mine num">押 ${fmtPts(stake[o.id])}</span>` : ''}</span>
+      <span class="opt-bar" aria-hidden="true"><i style="width:${p ? Math.round(p * 100) : 0}%"></i></span>
+      <span class="opt-pct num">${p ? pct(p) : '—'}</span>
+      <span class="opt-odds num" title="賠率">${p ? oddsOf(p).toFixed(2) : '—'}</span>
+    </li>`;
+  }).join('');
+  const info = [];
+  if (st === 'open' || st === 'pending') info.push(cv ? `<span>Claude 評估 ${fmtTime(cv.at)}</span>` : '<span class="warn">等待 Claude 評估</span>');
+  if (bets.length) {
+    if (res) { const pnl = pnlOf(bets, res); info.push(`<span>我的成績 <b class="num ${pnlClass(pnl)}">${signed(pnl)}</b></span>`); }
+    else info.push(`<span>我押了 <b class="num">${fmtPts(total)}</b> 點</span>`);
+  }
+  const n = notesOf(q.id).length; if (n) info.push(`<span>${n} 則筆記</span>`);
+  const resultLine = res
+    ? `<div class="result-line">${res.optionId === 'void' ? '<span>已作廢，押注全額退回</span>' : `${ICON.flag}<span>結果：<b>${esc(labelOf(q, res.optionId))}</b></span>${res.by === 'manual' ? '<span class="tag">手動公布</span>' : ''}`}</div>`
+    : '';
+  const acts = st === 'open'
+    ? '<button class="btn btn-ghost btn-sm" type="button" data-act="detail">筆記與詳情</button><button class="btn btn-primary btn-sm" type="button" data-act="bet">我要下注</button>'
+    : `<button class="btn btn-ghost btn-sm" type="button" data-act="detail">${st === 'done' && (bets.length || n) ? '對答案' : '詳情與筆記'}</button>`;
+  return `<article class="qcard s-${st}${S.fresh.has(q.id) ? ' is-fresh' : ''}" data-qid="${esc(q.id)}">
+    <div class="qmeta">${BADGE[st]}<span>${when}</span>${q.category ? `<span class="tag">${esc(q.category)}</span>` : ''}${q.createdBy === 'claude' ? '<span class="tag tag-claude">Claude 出題</span>' : ''}</div>
+    <h3 class="qtitle"><button type="button" class="qtitle-btn" data-act="detail">${esc(q.title)}</button></h3>
+    ${resultLine}
+    <div class="opt-head" aria-hidden="true"><span>答案</span><span></span><span>機率</span><span>賠率</span></div>
+    <ul class="opts">${opts}</ul>
+    <div class="qfoot"><div class="qfoot-info">${info.join('<span class="sep">·</span>')}</div><div class="qfoot-act">${acts}</div></div>
+  </article>`;
+}
+
+function renderSync() {
+  const el = $('#sync'); let state = 'idle', text = '瀏覽模式';
+  if (S.mode === 'loading') { state = 'busy'; text = '載入中'; }
+  else if (S.saving) { state = 'busy'; text = '儲存中'; }
+  else if (S.syncErr) { state = 'err'; text = '連線異常'; }
+  else if (S.mode === 'ready') { state = 'ok'; text = '已同步'; }
+  else if (S.mode === 'locked') text = '已上鎖';
+  el.dataset.state = state; el.textContent = text;
+}
+function setSaving(d) { S.saving = Math.max(0, S.saving + d); renderSync(); }
+
+/* =====================================================================
+   10. 抽屜（詳情、下注、新增題目、設定…）
+   ===================================================================== */
+function openSheet(kind, title, html, qid) {
+  if (!S.sheet) S.lastFocus = document.activeElement;
+  clearInterval(lockTimer);
+  S.sheet = { kind, qid: qid || null };
+  $('#sheetTitle').textContent = title;
+  $('#sheetBody').innerHTML = html;
+  $('#sheetBody').scrollTop = 0;
+  $('#sheet').hidden = false; $('#scrim').hidden = false;
+  document.documentElement.style.overflow = 'hidden';
+  setTimeout(() => { const f = $('#sheet [data-autofocus]') || $('#sheet .sheet-head .icon-btn'); if (f) f.focus({ preventScroll: true }); }, 60);
+}
+function closeSheet() {
+  clearInterval(lockTimer);
+  S.sheet = null;
+  $('#sheet').hidden = true; $('#scrim').hidden = true;
+  document.documentElement.style.overflow = '';
+  if (S.lastFocus && document.contains(S.lastFocus)) S.lastFocus.focus({ preventScroll: true });
+}
+function refreshSheet() {
+  if (!S.sheet || S.sheet.kind !== 'detail') return;
+  const q = qById(S.sheet.qid);
+  if (!q) { closeSheet(); return; }
+  fillDetail(q);
+}
+
+/* ---------- 題目詳情 ---------- */
+function openDetail(qid, focusNotes) {
+  const q = qById(qid); if (!q) return;
+  S.fresh.delete(qid);
+  openSheet('detail', '題目詳情', `
+    <div id="dHead"></div>
+    <div id="dResult"></div>
+    <section class="sec" id="dOdds"></section>
+    <section class="sec" id="dResearch"></section>
+    <section class="sec">
+      <h4>我的思路筆記<span class="h4-note">${canWrite() ? '已加密，只有你看得到' : ''}</span></h4>
+      <div id="dNotes"></div>
+      ${canWrite() ? `<div class="composer"><textarea id="noteIn" rows="3" maxlength="4000" aria-label="新增筆記" placeholder="記下你現在的判斷與理由……"></textarea><div class="composer-row"><span class="muted small">⌘ / Ctrl + Enter 送出</span><button class="btn btn-primary btn-sm" type="button" data-act="note-add">記錄</button></div></div>` : '<p class="muted small">連結 GitHub 後就能記錄筆記。</p>'}
+    </section>
+    <section class="sec" id="dManage"></section>`, qid);
+  fillDetail(q);
+  if (focusNotes) setTimeout(() => { const t = $('#noteIn'); if (t) { t.focus(); t.scrollIntoView({ block: 'center' }); } }, 120);
+}
+function fillDetail(q) {
+  const st = statusOf(q), res = resultOf(q), cv = claudeOf(q), bets = betsOf(q.id);
+  $('#dHead').innerHTML = `
+    <div class="qmeta">${BADGE[st]}${q.category ? `<span class="tag">${esc(q.category)}</span>` : ''}${q.createdBy === 'claude' ? '<span class="tag tag-claude">Claude 出題</span>' : ''}</div>
+    <h3 class="qtitle lg">${esc(q.title)}</h3>
+    ${q.background ? `<p class="d-bg">${esc(q.background)}</p>` : ''}
+    <dl class="kv d-kv">
+      <dt>下注截止</dt><dd><span class="num">${fmtTime(q.deadline)}</span>${st === 'open' ? `<span class="muted">${leftText(Date.parse(q.deadline) - Date.now())}</span>` : ''}</dd>
+      <dt>預計公布</dt><dd class="num">${fmtTime(q.resolveAt || q.deadline)}</dd>
+      ${q.criteria ? `<dt>判定標準</dt><dd>${esc(q.criteria)}</dd>` : ''}
+    </dl>`;
+  $('#dResult').innerHTML = res ? resultBoxHTML(q, res, bets) : '';
+  $('#dOdds').innerHTML = oddsSecHTML(q, st, cv, bets);
+  $('#dResearch').innerHTML = researchHTML(q, cv);
+  $('#dNotes').innerHTML = timelineHTML(q, res);
+  const ta = $('#noteIn'); if (ta) ta.placeholder = res ? '覆盤：當初哪裡想對了、哪裡想錯了？' : '記下你現在的判斷與理由……';
+  $('#dManage').innerHTML = manageHTML(q, st, res, bets);
+}
+function resultBoxHTML(q, res, bets) {
+  const pnl = pnlOf(bets, res), isVoid = res.optionId === 'void';
+  const by = res.by === 'claude' ? ' · Claude 查證' : res.by === 'manual' ? ' · 手動公布' : '';
+  return `<div class="result-box${isVoid ? ' is-void' : ''}">
+    <div class="eyebrow">${isVoid ? '已作廢' : '公布結果'}${by}${res.at ? ` · ${fmtTime(res.at)}` : ''}</div>
+    <div class="result-ans">${isVoid ? '<span>此題作廢，押注全額退回</span>' : `${ICON.flag}<span>${esc(labelOf(q, res.optionId))}</span>`}</div>
+    ${res.note && !isVoid ? `<p class="result-note">${esc(res.note)}</p>` : ''}
+    ${srcList(res.sources)}
+    ${bets.length ? `<div class="result-score">你的成績 <b class="num ${pnlClass(pnl)}">${signed(pnl)}</b> 點（${bets.length} 筆注單）</div>` : ''}
+  </div>`;
+}
+function oddsSecHTML(q, st, cv, bets) {
+  const rows = q.options.map(o => {
+    const p = cv ? cv.probs[o.id] : null, reason = cv && cv.r.reasons ? cv.r.reasons[o.id] : '';
+    return `<li class="dopt"><div class="dopt-top"><span class="dopt-label">${esc(o.label)}</span><span class="num dopt-p">${p ? pct(p) : '—'}</span><span class="num dopt-o">${p ? oddsOf(p).toFixed(2) : '—'}</span></div>${p ? `<span class="opt-bar" aria-hidden="true"><i style="width:${Math.round(p * 100)}%"></i></span>` : ''}${reason ? `<p class="dopt-r">${esc(reason)}</p>` : ''}</li>`;
+  }).join('');
+  let action = '';
+  if (st === 'open') {
+    if (cv) action = '<button class="btn btn-primary btn-block" type="button" data-act="bet">我要下注</button>';
+    else action = `<p class="muted small">Claude 還沒評估這題，評估完成後才能下注。</p>${canWrite() ? '<button class="btn btn-block" type="button" data-act="ask">請 Claude 評估這題</button>' : ''}`;
+  }
+  const mine = bets.length ? `<div class="mybets"><div class="eyebrow">我的注單</div>${bets.map(b => betRowHTML(q, b)).join('')}</div>` : '';
+  return `<h4>答案與賠率<span class="h4-note">${cv ? `依 Claude ${fmtTime(cv.at)} 的評估` : '尚未評估'}</span></h4><ul class="dopts">${rows}</ul>${action}${mine}`;
+}
+function betRowHTML(q, b) {
+  const out = outcomeOf(b, resultOf(q));
+  let right;
+  if (out === 'open') right = `<span class="muted">猜對 <span class="num up">+${fmtPts(settle(b.stake, b.odds, 'win').pnl)}</span>　猜錯 <span class="num down">${signed(settle(b.stake, b.odds, 'lose').pnl)}</span></span>`;
+  else if (out === 'void') right = '<b>退回</b>';
+  else { const s = settle(b.stake, b.odds, out); right = `<b class="num ${pnlClass(s.pnl)}">${signed(s.pnl)}</b>`; }
+  return `<div class="betrow"><div><b>${esc(b.optionLabel || labelOf(q, b.optionId))}</b><div class="small muted num">押 ${fmtPts(b.stake)} @ ${Number(b.odds).toFixed(2)} · ${fmtTime(b.createdAt)}</div></div><div class="betrow-r">${right}</div></div>`;
+}
+function researchHTML(q, cv) {
+  const r = S.claude.research[q.id];
+  if (!r) return `<h4>Claude 蒐集的資料</h4><p class="muted small">還沒有資料。Claude 約每 ${CFG.workerEveryHours} 小時上網檢查一次，新題目會優先評估。</p>`;
+  const conf = { low: '信心低', medium: '信心中等', high: '信心高' }[r.confidence] || '';
+  return `<h4>Claude 蒐集的資料<span class="h4-note">${fmtTime(r.updatedAt)}${conf ? ` · ${conf}` : ''}</span></h4>
+    ${r.summary ? `<p class="brief">${esc(r.summary)}</p>` : ''}
+    ${Array.isArray(r.facts) && r.facts.length ? `<ul class="facts">${r.facts.slice(0, 8).map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}
+    ${r.note ? `<p class="note-line">${esc(r.note)}</p>` : ''}
+    ${srcList(r.sources)}
+    ${!cv && q.optionsRev ? '<p class="note-line">選項已修改，等待 Claude 重新評估。</p>' : ''}`;
+}
+function srcList(list) {
+  if (!Array.isArray(list) || !list.length) return '';
+  const items = list.slice(0, 6).map(s => {
+    const u = safeUrl(s && s.url); if (!u) return '';
+    const host = new URL(u).hostname.replace(/^www\./, '');
+    return `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${ICON.ext}<span>${esc((s && s.title) || host)}</span><span class="host">${esc(host)}</span></a>`;
+  }).join('');
+  return items ? `<div class="sources">${items}</div>` : '';
+}
+function timelineHTML(q, res) {
+  const items = [];
+  notesOf(q.id).forEach(n => items.push({ t: Date.parse(n.at) || 0, html: `<li class="tl-item"><div class="tl-meta"><span class="num">${fmtTime(n.at)}</span>${n.phase === 'after' ? '<span class="tag">覆盤</span>' : ''}${canWrite() ? `<button class="link-btn" type="button" data-act="note-del" data-id="${esc(n.id)}">刪除</button>` : ''}</div><div class="tl-text">${esc(n.text)}</div></li>` }));
+  betsOf(q.id).forEach(b => items.push({ t: Date.parse(b.createdAt) || 0, html: `<li class="tl-item is-bet"><div class="tl-meta"><span class="num">${fmtTime(b.createdAt)}</span><span class="tag">下注</span></div><div class="tl-text">押「${esc(b.optionLabel || labelOf(q, b.optionId))}」<span class="num">${fmtPts(b.stake)}</span> 點，賠率 <span class="num">${Number(b.odds).toFixed(2)}</span></div></li>` }));
+  if (!items.length) return `<p class="muted small empty-notes">${canWrite() ? '還沒有筆記。先寫下你的判斷，結果公布後就能對答案。' : ''}</p>`;
+  if (res && res.at) items.push({ t: Date.parse(res.at) || Infinity, html: `<li class="tl-item is-result"><div class="tl-meta"><span class="num">${fmtTime(res.at)}</span><span class="tag">結果</span></div><div class="tl-text">${res.optionId === 'void' ? '此題作廢' : `答案是「${esc(labelOf(q, res.optionId))}」`}</div></li>` });
+  items.sort((a, b) => a.t - b.t);
+  return `<ol class="timeline">${items.map(i => i.html).join('')}</ol>`;
+}
+function manageHTML(q, st, res, bets) {
+  if (!canWrite()) return '';
+  const b = [];
+  if (!res) b.push(`<button class="btn btn-sm" type="button" data-act="ask">${ICON.refresh}請 Claude 查這題</button>`, '<button class="btn btn-sm" type="button" data-act="edit">編輯</button>');
+  if (st !== 'void') b.push(`<button class="btn btn-sm" type="button" data-act="resolve">${res ? '更正結果' : '手動公布結果'}</button>`);
+  if (!res) b.push('<button class="btn btn-sm btn-danger" type="button" data-act="void">作廢此題</button>');
+  if (!bets.length) b.push('<button class="btn btn-sm btn-danger" type="button" data-act="delete">刪除</button>');
+  return `<h4>管理</h4><div class="manage-row">${b.join('')}</div>`;
+}
+
+/* ---------- 下注（即時取得 Claude 最新評估 → 計算賠率 → 鎖定） ---------- */
+let lockTimer = null;
+async function openBet(qid) {
+  const q = qById(qid); if (!q) return;
+  if (!canWrite()) { openSetup(); return; }
+  if (statusOf(q) !== 'open') { toast('這題已經截止下注'); openDetail(qid); return; }
+  openSheet('bet', '我要下注', '<div id="betBox"><div class="computing"><span class="spinner" aria-hidden="true"></span><div><b>正在取得 Claude 最新蒐集的資料</b><div class="muted small">依最新資料即時計算各答案賠率，並鎖定 ' + CFG.lockMinutes + ' 分鐘…</div></div></div></div>', qid);
+  const t0 = Date.now();
+  try { await refreshClaude(); } catch (e) { /* 讀不到就用已載入的資料 */ }
+  await sleep(Math.max(0, 650 - (Date.now() - t0)));
+  if (!S.sheet || S.sheet.kind !== 'bet' || S.sheet.qid !== qid) return;
+  renderBetForm(q);
+}
+function renderBetForm(q) {
+  const box = $('#betBox'); if (!box) return;
+  const cv = claudeOf(q);
+  if (!cv) {
+    box.innerHTML = `<div class="eyebrow">題目</div><h3 class="qtitle">${esc(q.title)}</h3><p class="lead">Claude 還沒評估這題，評估完成後才有賠率。</p><div class="sheet-actions"><button class="btn btn-primary" type="button" data-act="ask">請 Claude 評估這題</button></div>`;
+    return;
+  }
+  const now = Date.now();
+  if (!S.lock || S.lock.qid !== q.id || S.lock.at !== cv.at || S.lock.expires <= now) S.lock = { qid: q.id, at: cv.at, probs: cv.probs, odds: cv.odds, expires: now + CFG.lockMinutes * 6e4 };
+  const avail = Math.max(0, Math.floor(wallet().available)), start = Math.min(10, avail);
+  const reasons = cv.r.reasons || {};
+  const ageH = (now - Date.parse(cv.at)) / 3600e3;
+  box.innerHTML = `
+    <div class="eyebrow">題目</div>
+    <h3 class="qtitle">${esc(q.title)}</h3>
+    <div class="lockbar" id="lockbar">${ICON.lock}<span>賠率已鎖定 <b class="num" id="lockLeft">${String(CFG.lockMinutes).padStart(2, '0')}:00</b></span><span class="muted">依 Claude ${fmtTime(cv.at)} 蒐集的資料計算</span></div>
+    ${ageH > 24 ? `<p class="warn-box">這份評估是 ${agoText(cv.at)} 的資料，想要更新可以先按「請 Claude 更新」。</p>` : ''}
+    <fieldset class="pick"><legend>選擇你的答案</legend>
+      ${q.options.map(o => `<label class="pick-opt"><input type="radio" name="pick" value="${esc(o.id)}"><span class="pick-main"><span class="pick-label">${esc(o.label)}</span>${reasons[o.id] ? `<span class="pick-reason">${esc(reasons[o.id])}</span>` : ''}</span><span class="pick-odds"><b class="num">${S.lock.odds[o.id].toFixed(2)}</b><small>Claude ${pct(S.lock.probs[o.id])}</small></span></label>`).join('')}
+    </fieldset>
+    <div class="stake">
+      <div class="stake-head"><label for="stakeIn">押注點數</label><span class="muted small">可用 <b class="num">${fmtPts(avail)}</b> 點</span></div>
+      ${avail >= 1
+        ? `<div class="stake-row"><input id="stakeIn" class="num" type="number" inputmode="numeric" min="1" max="${avail}" step="1" value="${start}"><div class="chips">${[10, 25, 50].filter(v => v < avail).map(v => `<button type="button" class="chip" data-stake="${v}">${v}</button>`).join('')}<button type="button" class="chip" data-stake="${avail}">全部 ${fmtPts(avail)}</button></div></div><input id="stakeRange" type="range" min="1" max="${avail}" step="1" value="${start}" aria-label="押注點數">`
+        : `<p class="warn-box">目前沒有可用點數。每天 00:00 會自動 +${CFG.dailyPoints} 點（${untilMidnight()}）。</p>`}
+    </div>
+    <div class="preview" id="betPreview"></div>
+    <p class="fine">猜對拿回「押注 × 賠率」；猜錯拿回「押注 × (賠率 − 1)」，只損失押注 × Claude 機率。</p>
+    <button class="btn btn-primary btn-block" type="button" id="betGo" data-act="bet-confirm" disabled>選一個答案</button>`;
+  updateBetPreview();
+  startLockTimer();
+}
+function readStake() {
+  const el = $('#stakeIn'); if (!el) return 0;
+  const v = Math.floor(Number(el.value)), max = Math.floor(wallet().available);
+  return v >= 1 && v <= max ? v : 0;
+}
+function setStake(v) {
+  const max = Math.floor(wallet().available); v = Math.max(1, Math.min(max, Math.floor(v)));
+  const a = $('#stakeIn'), r = $('#stakeRange'); if (a) a.value = v; if (r) r.value = v;
+  updateBetPreview();
+}
+function updateBetPreview() {
+  const pv = $('#betPreview'), go = $('#betGo'); if (!pv || !go || !S.lock) return;
+  const pick = ($('input[name="pick"]:checked') || {}).value, stake = readStake(), expired = Date.now() > S.lock.expires;
+  if (!pick) { pv.innerHTML = ''; go.disabled = true; go.textContent = '選一個答案'; return; }
+  if (!stake) { pv.innerHTML = ''; go.disabled = true; go.textContent = $('#stakeIn') ? '輸入押注點數' : '點數不足'; return; }
+  const od = S.lock.odds[pick], w = settle(stake, od, 'win'), l = settle(stake, od, 'lose');
+  pv.innerHTML = `<div class="pv win"><span>猜對拿回</span><b class="num">${fmtPts(w.back)}</b><em class="num">${signed(w.pnl)}</em></div><div class="pv lose"><span>猜錯拿回</span><b class="num">${fmtPts(l.back)}</b><em class="num">${signed(l.pnl)}</em></div>`;
+  go.disabled = expired;
+  go.textContent = expired ? '賠率已過期' : `確認下注 ${fmtPts(stake)} 點`;
+}
+function startLockTimer() {
+  clearInterval(lockTimer);
+  const tick = () => {
+    const el = $('#lockLeft'), bar = $('#lockbar');
+    if (!el || !bar || !S.lock) { clearInterval(lockTimer); return; }
+    const ms = S.lock.expires - Date.now();
+    if (ms <= 0) {
+      clearInterval(lockTimer);
+      bar.classList.add('is-expired');
+      bar.innerHTML = `${ICON.lock}<span>賠率鎖定已到期</span><button class="btn btn-sm" type="button" data-act="relock">重新取得賠率</button>`;
+      updateBetPreview();
+      return;
+    }
+    const s = Math.ceil(ms / 1000);
+    el.textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+  };
+  tick();
+  lockTimer = setInterval(tick, 1000);
+}
+async function confirmBet() {
+  const q = qById(S.sheet && S.sheet.qid); if (!q || !S.lock) return;
+  const pick = ($('input[name="pick"]:checked') || {}).value, stake = readStake();
+  if (!pick || !stake) return;
+  if (Date.now() > S.lock.expires) { toast('賠率鎖定已到期，請重新取得', 'err'); return; }
+  if (Date.now() >= Date.parse(q.deadline)) { toast('已經過了下注截止時間', 'err'); return; }
+  if (stake > Math.floor(wallet().available)) { toast('可用點數不足', 'err'); return; }
+  const bet = { id: uid('b'), qid: q.id, optionId: pick, optionLabel: labelOf(q, pick), stake, odds: S.lock.odds[pick], prob: S.lock.probs[pick], basisAt: S.lock.at, createdAt: nowIso() };
+  const go = $('#betGo'); go.disabled = true; go.textContent = '下注中…';
+  const ok = await mutate('vault', v => { if (!v.bets.some(b => b.id === bet.id)) v.bets.push(bet); }, 'forecast: 更新加密資料');
+  if (!ok) { updateBetPreview(); return; }
+  clearInterval(lockTimer);
+  showTicket(q, bet);
+}
+function showTicket(q, bet) {
+  if (!S.sheet) return;
+  const w = settle(bet.stake, bet.odds, 'win'), l = settle(bet.stake, bet.odds, 'lose');
+  S.sheet.kind = 'ticket';
+  $('#sheetTitle').textContent = '注單';
+  $('#sheetBody').innerHTML = `
+    <div class="ticket">
+      <div class="ticket-in">
+        <div class="ticket-top"><span>注單</span><span class="num">#${esc(bet.id.slice(-6).toUpperCase())}</span></div>
+        <h3 class="qtitle">${esc(q.title)}</h3>
+        <dl class="kv">
+          <dt>押注答案</dt><dd><b>${esc(bet.optionLabel)}</b></dd>
+          <dt>押注點數</dt><dd class="num">${fmtPts(bet.stake)}</dd>
+          <dt>鎖定賠率</dt><dd><span class="num">${bet.odds.toFixed(2)}</span><span class="muted">Claude ${pct(bet.prob)}</span></dd>
+          <dt>下注時間</dt><dd class="num">${fmtTime(bet.createdAt)}</dd>
+        </dl>
+      </div>
+      <div class="perf" aria-hidden="true"></div>
+      <div class="ticket-out">
+        <div class="pv win"><span>猜對拿回</span><b class="num">${fmtPts(w.back)}</b><em class="num">${signed(w.pnl)}</em></div>
+        <div class="pv lose"><span>猜錯拿回</span><b class="num">${fmtPts(l.back)}</b><em class="num">${signed(l.pnl)}</em></div>
+      </div>
+    </div>
+    <div class="ticket-actions"><button class="btn" type="button" data-act="detail-notes" data-qid="${esc(q.id)}">寫下這次的思路</button><button class="btn btn-primary" type="button" data-act="close">完成</button></div>`;
+  toast('下注成功');
+}
+
+/* ---------- 筆記 ---------- */
+async function addNote() {
+  const q = qById(S.sheet && S.sheet.qid), ta = $('#noteIn'); if (!q || !ta) return;
+  const text = ta.value.trim(); if (!text) { ta.focus(); return; }
+  const note = { id: uid('n'), text, at: nowIso(), phase: resultOf(q) ? 'after' : 'before' };
+  const btn = $('[data-act="note-add"]'); if (btn) btn.disabled = true;
+  const ok = await mutate('vault', v => { const arr = Array.isArray(v.notes[q.id]) ? v.notes[q.id] : []; if (!arr.some(n => n.id === note.id)) arr.push(note); v.notes[q.id] = arr; }, 'forecast: 更新加密資料');
+  if (btn) btn.disabled = false;
+  if (ok) { ta.value = ''; toast('已記錄'); }
+}
+async function delNote(id) {
+  const q = qById(S.sheet && S.sheet.qid); if (!q) return;
+  if (!(await askConfirm({ title: '刪除這則筆記？', body: '刪除後無法復原。', ok: '刪除', danger: true }))) return;
+  await mutate('vault', v => { v.notes[q.id] = (v.notes[q.id] || []).filter(n => n.id !== id); if (!v.notes[q.id].length) delete v.notes[q.id]; }, 'forecast: 更新加密資料');
+}
+
+/* ---------- 新增／編輯題目 ---------- */
+const nextOptId = used => { for (let i = 0; i < 26; i++) { const id = String.fromCharCode(97 + i); if (!used.includes(id)) return id; } return uid('o'); };
+function optRowHTML(o, locked) {
+  return `<div class="optrow" data-oid="${esc(o.id)}"><span class="idx"></span><input class="opt-in" maxlength="60" value="${esc(o.label)}" ${locked ? 'disabled' : ''} aria-label="答案選項">${locked ? '<span></span>' : `<button class="icon-btn sm" type="button" data-act="opt-del" aria-label="刪除這個選項">${ICON.x}</button>`}</div>`;
+}
+function renumberOpts() {
+  $$('#optList .optrow').forEach((r, i) => { const L = String.fromCharCode(65 + i); $('.idx', r).textContent = L; const inp = $('.opt-in', r); inp.placeholder = `答案 ${L}`; inp.setAttribute('aria-label', `答案 ${L}`); });
+  const n = $$('#optList .optrow').length, add = $('#optAdd'); if (add) add.hidden = n >= CFG.maxOptions;
+  $$('#optList [data-act="opt-del"]').forEach(b => { b.disabled = n <= 2; });
+}
+function openEditor(qid) {
+  const q = qid ? qById(qid) : null, locked = q ? betsOf(q.id).length > 0 : false;
+  const opts = q ? q.options : [{ id: 'a', label: '' }, { id: 'b', label: '' }, { id: 'c', label: '' }];
+  openSheet('editor', q ? '編輯問題' : '新增問題', `<form id="qForm" novalidate>
+    <div class="field" style="margin-top:0"><label for="fTitle">問題</label><input id="fTitle" maxlength="120" required data-autofocus placeholder="例如：台積電 11 月營收年增率會超過 40% 嗎？" value="${esc(q ? q.title : '')}"></div>
+    <div class="field"><label for="fCat">分類<span class="opt-note">選填</span></label><input id="fCat" list="catList" maxlength="12" placeholder="總經、半導體、政治…" value="${esc(q ? q.category || '' : '')}"><datalist id="catList">${CATS.map(c => `<option value="${c}"></option>`).join('')}</datalist></div>
+    <div class="field"><label for="fBg">背景說明<span class="opt-note">選填</span></label><textarea id="fBg" rows="2" maxlength="600" placeholder="目前的情況、為什麼關心這題">${esc(q ? q.background || '' : '')}</textarea></div>
+    <div class="field"><label>答案選項<span class="opt-note">2–${CFG.maxOptions} 個，彼此不重疊</span></label>
+      <div class="optlist" id="optList">${opts.map(o => optRowHTML(o, locked)).join('')}</div>
+      ${locked ? '<p class="hint">這題已經有注單，選項不能再修改。</p>' : `<button class="btn btn-sm btn-ghost" type="button" data-act="opt-add" id="optAdd">${ICON.plus}新增選項</button>`}
+    </div>
+    <div class="field"><label for="fCrit">判定標準</label><textarea id="fCrit" rows="2" maxlength="600" placeholder="用什麼來源、什麼數字判定答案。例如：以台積電 12/10 公布的 11 月營收為準">${esc(q ? q.criteria || '' : '')}</textarea><p class="hint">寫得越清楚，Claude 判定結果越準。</p></div>
+    <div class="row2">
+      <div class="field"><label for="fDl">下注截止</label><input id="fDl" type="datetime-local" required value="${toInput(q ? q.deadline : defaultDeadline())}"></div>
+      <div class="field"><label for="fRa">預計公布結果</label><input id="fRa" type="datetime-local" value="${q ? toInput(q.resolveAt || q.deadline) : ''}"></div>
+    </div>
+    <p class="hint" style="margin-top:10px">時間都是台灣時間；「預計公布」空白就等於下注截止時間。儲存後 Claude 會在下次檢查（約 ${CFG.workerEveryHours} 小時內）上網評估機率，評估完就能下注。</p>
+    <div class="form-err" id="fErr" role="alert"></div>
+    <div class="sheet-actions"><button class="btn" type="button" data-act="close">取消</button><button class="btn btn-primary" type="submit" id="fSave">${q ? '儲存' : '新增問題'}</button></div>
+  </form>`, qid);
+  renumberOpts();
+}
+function addOptRow() {
+  const list = $('#optList'); if (!list) return;
+  const used = $$('.optrow', list).map(r => r.dataset.oid);
+  if (used.length >= CFG.maxOptions) return;
+  list.insertAdjacentHTML('beforeend', optRowHTML({ id: nextOptId(used), label: '' }, false));
+  renumberOpts();
+  $$('.opt-in', list).pop().focus();
+}
+function delOptRow(row) { if (!row || $$('#optList .optrow').length <= 2) return; row.remove(); renumberOpts(); }
+async function saveEditor(e) {
+  e.preventDefault();
+  const qid = S.sheet && S.sheet.qid, old = qid ? qById(qid) : null, locked = old ? betsOf(old.id).length > 0 : false;
+  const err = m => { $('#fErr').textContent = m; return false; };
+  const title = $('#fTitle').value.trim(), category = $('#fCat').value.trim(), background = $('#fBg').value.trim(), criteria = $('#fCrit').value.trim();
+  const deadline = fromInput($('#fDl').value), resolveAt = fromInput($('#fRa').value) || deadline;
+  const options = locked ? old.options : $$('#optList .optrow').map(r => ({ id: r.dataset.oid, label: $('.opt-in', r).value.trim() })).filter(o => o.label);
+  if (!title) return err('請填寫問題。');
+  if (options.length < 2) return err('至少需要 2 個答案選項。');
+  if (new Set(options.map(o => o.label)).size !== options.length) return err('答案選項不能重複。');
+  if (!deadline || !isFinite(Date.parse(deadline))) return err('請設定下注截止時間。');
+  if ((!old || deadline !== old.deadline) && Date.parse(deadline) <= Date.now()) return err('下注截止時間必須在未來。');
+  if (!isFinite(Date.parse(resolveAt)) || Date.parse(resolveAt) < Date.parse(deadline)) return err('預計公布時間不能早於下注截止。');
+  const changed = !!old && !locked && JSON.stringify(old.options) !== JSON.stringify(options);
+  const q = old
+    ? { ...old, title, category, background, criteria, deadline, resolveAt, options, updatedAt: nowIso() }
+    : { id: uid('q'), title, category, background, criteria, deadline, resolveAt, options, createdAt: nowIso(), createdBy: 'user' };
+  if (changed) q.optionsRev = nowIso();
+  const save = $('#fSave'); save.disabled = true;
+  const ok = await mutate('board', b => {
+    const i = b.questions.findIndex(x => x.id === q.id);
+    if (i >= 0) b.questions[i] = q; else b.questions.push(q);
+    if (!old || changed) b.requests = (b.requests || []).concat({ id: uid('r'), at: nowIso(), qid: q.id }).slice(-30);
+  }, old ? `forecast: 編輯題目「${title}」` : `forecast: 新增題目「${title}」`);
+  if (!ok) { save.disabled = false; return; }
+  closeSheet();
+  toast(old ? '已儲存' : `已新增。Claude 會在下次檢查時上網評估（約 ${CFG.workerEveryHours} 小時內）。`);
+}
+
+/* ---------- 公布、作廢、刪除、請 Claude 更新 ---------- */
+function openResolve(qid) {
+  const q = qById(qid); if (!q) return;
+  const res = resultOf(q);
+  openSheet('resolve', res ? '更正結果' : '手動公布結果', `
+    <p class="lead">一般情況下，Claude 會在結果揭曉後自動查證並公布。只有 Claude 判定錯誤、或你想提早結算時才需要手動公布。</p>
+    <h3 class="qtitle">${esc(q.title)}</h3>
+    <fieldset class="pick"><legend>正確答案</legend>${q.options.map(o => `<label class="pick-opt"><input type="radio" name="rpick" value="${esc(o.id)}" ${res && res.optionId === o.id ? 'checked' : ''}><span class="pick-main"><span class="pick-label">${esc(o.label)}</span></span><span></span></label>`).join('')}</fieldset>
+    <div class="field"><label for="rNote">說明<span class="opt-note">選填</span></label><textarea id="rNote" rows="2" maxlength="300" placeholder="例如：Fed 宣布維持利率不變">${esc(q.manualResult ? q.manualResult.note || '' : '')}</textarea></div>
+    <div class="form-err" id="rErr" role="alert"></div>
+    <div class="sheet-actions">${q.manualResult ? '<button class="btn" type="button" data-act="resolve-clear">清除手動結果</button>' : ''}<button class="btn btn-primary" type="button" data-act="resolve-save">公布並結算</button></div>`, qid);
+}
+async function saveResolve() {
+  const q = qById(S.sheet && S.sheet.qid); if (!q) return;
+  const pick = ($('input[name="rpick"]:checked') || {}).value;
+  if (!pick) { $('#rErr').textContent = '請選擇正確答案。'; return; }
+  const note = $('#rNote').value.trim();
+  if (!(await askConfirm({ title: `公布答案「${labelOf(q, pick)}」？`, body: '公布後會立即結算這題的所有注單。', ok: '公布並結算' }))) return;
+  const ok = await mutate('board', b => { const x = b.questions.find(y => y.id === q.id); if (x) x.manualResult = { optionId: pick, note, at: nowIso() }; }, `forecast: 手動公布「${q.title}」`);
+  if (ok) { toast('已公布並結算'); openDetail(q.id); }
+}
+async function clearResolve() {
+  const q = qById(S.sheet && S.sheet.qid); if (!q) return;
+  if (!(await askConfirm({ title: '清除手動結果？', body: '會改回由 Claude 查證的結果；若 Claude 還沒公布，這題會回到待公布。' }))) return;
+  const ok = await mutate('board', b => { const x = b.questions.find(y => y.id === q.id); if (x) delete x.manualResult; }, `forecast: 清除手動結果「${q.title}」`);
+  if (ok) openDetail(q.id);
+}
+async function voidQ(qid) {
+  const q = qById(qid); if (!q) return;
+  if (!(await askConfirm({ title: '作廢這一題？', body: '作廢後不能再下注，已下的注全額退回。', ok: '作廢', danger: true }))) return;
+  await mutate('board', b => { const x = b.questions.find(y => y.id === q.id); if (x) { x.voided = true; x.voidedAt = nowIso(); } }, `forecast: 作廢「${q.title}」`);
+}
+async function deleteQ(qid) {
+  const q = qById(qid); if (!q) return;
+  if (betsOf(qid).length) { toast('這題有注單，只能作廢、不能刪除'); return; }
+  if (!(await askConfirm({ title: '刪除這一題？', body: notesOf(qid).length ? '這題的筆記也會一起刪除，無法復原。' : '刪除後無法復原。', ok: '刪除', danger: true }))) return;
+  const ok = await mutate('board', b => { b.questions = b.questions.filter(x => x.id !== qid); b.requests = b.requests.filter(r => r.qid !== qid); }, `forecast: 刪除「${q.title}」`);
+  if (!ok) return;
+  closeSheet();
+  if (notesOf(qid).length) await mutate('vault', v => { delete v.notes[qid]; }, 'forecast: 更新加密資料');
+  toast('已刪除');
+}
+async function askClaude(qid) {
+  if (!canWrite()) { openSetup(); return; }
+  if (pendingRequests().some(r => (r.qid || null) === (qid || null))) { toast(`已經排入了，Claude 下次檢查時會處理（約每 ${CFG.workerEveryHours} 小時一次）`); return; }
+  const q = qid ? qById(qid) : null;
+  const ok = await mutate('board', b => { b.requests = (b.requests || []).concat({ id: uid('r'), at: nowIso(), qid: qid || null }).slice(-30); }, q ? `forecast: 請 Claude 更新「${q.title}」` : 'forecast: 請 Claude 更新全部');
+  if (ok) toast(`已排入。Claude 下次檢查時會優先處理（約每 ${CFG.workerEveryHours} 小時一次）。`);
+}
+
+/* ---------- 連結 GitHub ---------- */
+function openSetup() {
+  const needToken = !S.token || S.tokenBad, hasVault = !!S.vaultBlob;
+  openSheet('setup', needToken ? '連結 GitHub' : '解鎖我的資料', `
+    ${needToken ? `
+      <p class="lead">連結後就能新增題目、下注和記筆記。資料存在你的 GitHub（hexacalc 的 forecast-data 分支），每台裝置只要設定一次；之後可在「設定」用 QR code 帶到手機。</p>
+      <ol class="steps">
+        <li>打開 <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub 建立權杖頁面</a>（Fine-grained token）。</li>
+        <li><b>Token name</b> 填「時事預測所」；<b>Expiration</b> 選 1 年或 No expiration。</li>
+        <li><b>Repository access</b> 選 Only select repositories，再選 <b>hexacalc</b>。</li>
+        <li><b>Permissions</b> → Repository permissions → <b>Contents</b> 改成 <b>Read and write</b>。</li>
+        <li>按 Generate token，複製後貼到下面。</li>
+      </ol>
+      <div class="field"><label for="sToken">GitHub 權杖</label><input id="sToken" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…" data-autofocus></div>` : ''}
+    ${hasVault
+      ? `<div class="field"><label for="sPass">加密密碼</label><input id="sPass" type="password" autocomplete="current-password" placeholder="輸入你設定過的密碼" ${needToken ? '' : 'data-autofocus'}><p class="hint">用來解開你的注單與筆記。</p></div>`
+      : `<div class="field"><label for="sPass">設定加密密碼</label><input id="sPass" type="password" autocomplete="new-password" placeholder="至少 6 個字" ${needToken ? '' : 'data-autofocus'}><p class="hint">GitHub 上的資料是公開的。你的注單和思路筆記會用這組密碼加密，只有你看得到；忘記密碼就解不開，請記好。</p></div>
+         <div class="field"><label for="sPass2">再輸入一次密碼</label><input id="sPass2" type="password" autocomplete="new-password"></div>`}
+    <div class="form-err" id="sErr" role="alert"></div>
+    <div class="sheet-actions"><button class="btn btn-primary btn-block" type="button" data-act="setup-go" id="sGo">${needToken ? '連結並開始' : '解鎖'}</button></div>`);
+}
+async function submitSetup() {
+  const tokIn = $('#sToken'), passIn = $('#sPass'), pass2In = $('#sPass2'), go = $('#sGo');
+  const err = m => { $('#sErr').textContent = m; };
+  const token = tokIn ? tokIn.value.trim() : S.token, pass = passIn ? passIn.value : '';
+  if (!token) return err('請貼上 GitHub 權杖。');
+  if (pass2In) { if (pass.length < 6) return err('密碼至少 6 個字。'); if (pass !== pass2In.value) return err('兩次輸入的密碼不一樣。'); }
+  else if (!pass) return err('請輸入密碼。');
+  err(''); go.disabled = true; go.textContent = '連結中…';
+  const prev = { token: S.token, tokenBad: S.tokenBad };
+  S.token = token; S.tokenBad = false; S.boardTag = null; S.claudeTag = null; S.vaultTag = null;
+  try {
+    await Promise.all([refreshBoard(), refreshClaude()]);
+    const r = await readJson('vault.json');
+    if (r.missing) {
+      if (pass.length < 6) throw new Error('找不到既有的加密資料，請設定至少 6 個字的新密碼。');
+      S.pass = pass; S.vaultKey = null; S.vault = normVault({ startDate: todayStr() }); S.vaultSha = null; S.mode = 'ready';
+      if (!(await mutate('vault', () => {}, 'forecast: 建立加密資料'))) { S.vault = null; S.mode = 'guest'; throw new Error('無法寫入 GitHub，請確認權杖對 hexacalc 有 Contents「Read and write」權限。'); }
+    } else {
+      let v;
+      try { v = await openVault(r.data, pass); } catch (e) { throw new Error('密碼不正確。'); }
+      S.vault = v; S.vaultBlob = r.data; S.vaultSha = r.sha; S.vaultTag = r.etag; S.pass = pass;
+    }
+    store.set(LS.token, token); store.set(LS.pass, pass); store.set(LS.day, todayStr());
+    S.mode = 'ready'; S.syncErr = null;
+    closeSheet(); renderAll(); toast('已連結，開始預測吧！');
+  } catch (e) {
+    if (e.status === 401) { S.token = prev.token; S.tokenBad = prev.tokenBad; err('權杖無效，請確認有完整複製。'); }
+    else err(e.status !== undefined ? errMsg(e) : e.message);
+    go.disabled = false; go.textContent = tokIn ? '連結並開始' : '解鎖';
+  }
+}
+function deviceLink() {
+  const payload = b64FromText(JSON.stringify({ t: S.token, p: S.pass })).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return `${location.origin}${location.pathname}#setup=${payload}`;
+}
+function applyHashSetup() {
+  const m = /^#setup=([A-Za-z0-9_-]+)$/.exec(location.hash); if (!m) return;
+  try {
+    let b = m[1].replace(/-/g, '+').replace(/_/g, '/'); while (b.length % 4) b += '=';
+    const o = JSON.parse(textFromB64(b));
+    if (o && typeof o.t === 'string' && o.t) { S.token = o.t; store.set(LS.token, o.t); S.tokenBad = false; }
+    if (o && typeof o.p === 'string' && o.p) { S.pass = o.p; store.set(LS.pass, o.p); }
+  } catch (e) { /* 連結格式不正確就忽略 */ }
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { location.hash = ''; }
+}
+async function disconnect() {
+  if (!(await askConfirm({ title: '中斷這台裝置的連結？', body: '會清除這台裝置上的權杖和密碼。GitHub 上的資料不受影響，之後可以重新連結。', ok: '中斷連結', danger: true }))) return;
+  store.del(LS.token); store.del(LS.pass);
+  Object.assign(S, { token: '', pass: '', tokenBad: false, vault: null, vaultBlob: null, vaultKey: null, vaultSha: null, vaultTag: null, boardTag: null, claudeTag: null, boardSha: null });
+  closeSheet(); boot();
+}
+
+/* ---------- 設定、規則 ---------- */
+function openSettings() {
+  const theme = store.get(LS.theme) || 'system';
+  openSheet('settings', '設定', `
+    <section class="sec first"><h4>外觀</h4>
+      <div class="seg seg-full" id="themeSeg" role="tablist">${[['light', '白天模式'], ['dark', '黑夜模式'], ['system', '跟隨系統']].map(([v, l]) => `<button type="button" role="tab" data-theme-set="${v}" aria-selected="${theme === v}">${l}</button>`).join('')}</div>
+    </section>
+    <section class="sec"><h4>GitHub 連結</h4>
+      <dl class="kv">
+        <dt>狀態</dt><dd>${S.mode === 'ready' ? '已連結' : S.mode === 'locked' ? '已連結，待輸入密碼' : '未連結'}</dd>
+        <dt>資料位置</dt><dd><a href="https://github.com/${CFG.repo}/tree/${CFG.branch}" target="_blank" rel="noopener">${CFG.repo} · ${CFG.branch}</a></dd>
+        ${S.token ? `<dt>權杖</dt><dd class="num">…${esc(S.token.slice(-4))}</dd>` : ''}
+        ${S.vault ? `<dt>開始日期</dt><dd class="num">${esc(S.vault.startDate)}</dd>` : ''}
+      </dl>
+      <div class="manage-row" style="margin-top:14px">${S.mode === 'ready' ? '' : '<button class="btn btn-primary btn-sm" type="button" data-act="setup">連結 GitHub</button>'}${S.token ? '<button class="btn btn-sm btn-danger" type="button" data-act="disconnect">中斷這台裝置的連結</button>' : ''}</div>
+    </section>
+    ${S.mode === 'ready' ? `<section class="sec"><h4>在手機或其他裝置使用</h4>
+      <p class="small muted" style="margin:0">用手機掃 QR code，或把連結傳給自己打開，就會自動完成設定。連結裡有你的權杖和密碼，不要分享給別人。</p>
+      <div class="qr" id="qrBox"></div>
+      <div class="manage-row"><button class="btn btn-sm" type="button" data-act="copy-link">複製設定連結</button></div>
+    </section>` : ''}
+    <section class="sec"><h4>關於</h4><p class="small muted" style="margin:0">時事預測所 · 程式碼在 <a href="https://github.com/${CFG.repo}/tree/main/forecast" target="_blank" rel="noopener">GitHub</a>。想調整規則或加功能，直接請 Claude 修改即可。</p></section>`);
+  renderQR();
+}
+function renderQR() {
+  const box = $('#qrBox'); if (!box) return;
+  if (typeof window.qrcode !== 'function') { box.innerHTML = '<p class="small">QR code 還沒載入，請改用「複製設定連結」。</p>'; return; }
+  try { const qr = window.qrcode(0, 'L'); qr.addData(deviceLink()); qr.make(); box.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true }); }
+  catch (e) { box.innerHTML = '<p class="small">無法產生 QR code，請改用「複製設定連結」。</p>'; }
+}
+async function copyLink() {
+  const link = deviceLink();
+  try { await navigator.clipboard.writeText(link); toast('已複製設定連結'); }
+  catch (e) {
+    const box = $('#qrBox'); if (!box) return;
+    box.insertAdjacentHTML('afterend', '<div class="field"><input id="linkOut" readonly></div>');
+    const inp = $('#linkOut'); inp.value = link; inp.select(); toast('請手動複製下方連結');
+  }
+}
+function openRules() {
+  openSheet('rules', '規則說明', `<div class="rules">
+    <section class="sec first"><h4>點數</h4><ul>
+      <li>一開始有 <b class="num">${CFG.startPoints}</b> 點，之後每天台灣時間 00:00 自動 <b class="num">+${CFG.dailyPoints}</b> 點（沒打開網站也會累積）。</li>
+      <li>下注的點數會先鎖住，結果公布後才結算。</li></ul></section>
+    <section class="sec"><h4>賠率怎麼來</h4><ul>
+      <li>Claude 會上網蒐集每一題的最新資料，估計每個答案成真的機率 p。</li>
+      <li><b>賠率 = 2 − p</b>。Claude 越不看好的答案，賠率越高（最高 1.98、最低 1.02）。</li>
+      <li>按「我要下注」時，網頁會即時抓 Claude 最新的評估算出賠率，並鎖定 ${CFG.lockMinutes} 分鐘；每張注單都用下注當下的賠率結算。</li></ul></section>
+    <section class="sec"><h4>結算</h4><ul>
+      <li><b>猜對</b>：拿回 押注 × 賠率。</li>
+      <li><b>猜錯</b>：拿回 押注 × (賠率 − 1)，只損失「押注 × p」，不會全部歸零。</li>
+      <li><b>作廢</b>：全額退回。</li></ul>
+      <div class="example"><div class="eyebrow">例子</div>
+        <p>Claude 認為「維持不變」的機率是 70%，賠率就是 1.30。押 50 點：</p>
+        <div class="preview"><div class="pv win"><span>猜對拿回</span><b class="num">65</b><em class="num">+15</em></div><div class="pv lose"><span>猜錯拿回</span><b class="num">15</b><em class="num">−35</em></div></div>
+        <p>反過來押 Claude 只給 30% 的冷門答案（賠率 1.70）：猜對 +35，猜錯只扣 15。</p></div></section>
+    <section class="sec"><h4>為什麼這樣設計</h4><p>用 Claude 的機率來算，每一注的期望值都是 0。只有你比 Claude 看得更準，點數才會長期成長；所以點數就是你「打敗 Claude」的成績單。</p></section>
+    <section class="sec"><h4>結果公布</h4><ul>
+      <li>Claude 約每 ${CFG.workerEveryHours} 小時上網檢查一次：更新各題資料與機率；過了預計公布時間的題目會查證結果，並自動結算。</li>
+      <li>想讓 Claude 早點處理，按「請 Claude 更新」，下次檢查時會優先處理。</li>
+      <li>你也可以在題目詳情裡手動公布或更正結果。</li></ul></section>
+  </div>`);
+}
+
+/* ---------- 確認視窗、通知 ---------- */
+function askConfirm({ title, body = '', ok = '確定', danger = false }) {
+  return new Promise(resolve => {
+    const box = $('#confirm'), yes = $('#cfYes'), no = $('#cfNo'), prev = document.activeElement;
+    $('#cfTitle').textContent = title; $('#cfBody').textContent = body;
+    yes.textContent = ok; yes.className = 'btn ' + (danger ? 'btn-danger-solid' : 'btn-primary');
+    box.hidden = false; yes.focus();
+    const onKey = e => { if (e.key === 'Escape') { e.stopPropagation(); done(false); } };
+    const done = v => { box.hidden = true; yes.onclick = null; no.onclick = null; box.onclick = null; document.removeEventListener('keydown', onKey, true); if (prev && prev.focus) prev.focus({ preventScroll: true }); resolve(v); };
+    yes.onclick = () => done(true); no.onclick = () => done(false);
+    box.onclick = e => { if (e.target === box) done(false); };
+    document.addEventListener('keydown', onKey, true);
+  });
+}
+function toast(msg, kind) {
+  const el = document.createElement('div');
+  el.className = 'toast' + (kind === 'err' ? ' err' : '');
+  el.textContent = msg;
+  $('#toasts').appendChild(el);
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 320); }, kind === 'err' ? 5500 : 3400);
+}
+
+/* =====================================================================
+   11. 主題（白天／黑夜）
+   ===================================================================== */
+const curTheme = () => document.documentElement.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+function setTheme(t) {
+  if (t === 'system') { document.documentElement.removeAttribute('data-theme'); store.del(LS.theme); }
+  else { document.documentElement.setAttribute('data-theme', t); store.set(LS.theme, t); }
+  updateThemeUI();
+}
+function updateThemeUI() {
+  const dark = curTheme() === 'dark', btn = $('#btnTheme');
+  btn.innerHTML = dark ? ICON.sun : ICON.moon;
+  btn.setAttribute('aria-label', dark ? '切換成白天模式' : '切換成黑夜模式');
+  btn.title = dark ? '切換成白天模式' : '切換成黑夜模式';
+  $('#metaTheme').setAttribute('content', dark ? '#000000' : '#ffffff');
+}
+
+/* =====================================================================
+   12. 事件
+   ===================================================================== */
+function bind() {
+  $$('[data-icon]').forEach(el => { el.innerHTML = ICON[el.dataset.icon] || ''; });
+  $('#btnTheme').addEventListener('click', () => setTheme(curTheme() === 'dark' ? 'light' : 'dark'));
+  $('#btnRules').addEventListener('click', openRules);
+  $('#btnSettings').addEventListener('click', openSettings);
+  $('#btnNew').addEventListener('click', () => (canWrite() ? openEditor() : openSetup()));
+  $('#btnAsk').addEventListener('click', () => askClaude(null));
+  $('#seg').addEventListener('click', e => {
+    const b = e.target.closest('[data-filter]'); if (!b) return;
+    S.filter = b.dataset.filter; store.set(LS.filter, S.filter); renderToolbar(); renderList();
+  });
+  $('#list').addEventListener('click', e => {
+    const a = e.target.closest('[data-act]'); if (!a) return;
+    if (a.dataset.act === 'new') { openEditor(); return; }
+    const card = e.target.closest('.qcard'); if (!card) return;
+    if (a.dataset.act === 'bet') openBet(card.dataset.qid); else openDetail(card.dataset.qid);
+  });
+  $('#banner').addEventListener('click', e => {
+    const a = e.target.closest('[data-act]'); if (!a) return;
+    if (a.dataset.act === 'setup') openSetup(); else if (a.dataset.act === 'retry') boot();
+  });
+  $('#scrim').addEventListener('click', closeSheet);
+  const sheet = $('#sheet');
+  sheet.addEventListener('click', onSheetClick);
+  sheet.addEventListener('input', onSheetInput);
+  sheet.addEventListener('change', onSheetInput);
+  sheet.addEventListener('submit', e => { if (e.target.id === 'qForm') saveEditor(e); });
+  sheet.addEventListener('keydown', e => {
+    if (e.target.id === 'noteIn' && e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); addNote(); }
+    if (['sToken', 'sPass', 'sPass2'].includes(e.target.id) && e.key === 'Enter') { e.preventDefault(); submitSetup(); }
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && S.sheet && $('#confirm').hidden) closeSheet(); });
+  const mq = matchMedia('(prefers-color-scheme: dark)');
+  if (mq.addEventListener) mq.addEventListener('change', updateThemeUI);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') poll(); });
+}
+function onSheetClick(e) {
+  const a = e.target.closest('[data-act], [data-stake], [data-theme-set]'); if (!a) return;
+  if (a.dataset.stake) { setStake(Number(a.dataset.stake)); return; }
+  if (a.dataset.themeSet) { setTheme(a.dataset.themeSet); $$('#themeSeg button').forEach(b => b.setAttribute('aria-selected', String(b === a))); return; }
+  const qid = a.dataset.qid || (S.sheet && S.sheet.qid);
+  switch (a.dataset.act) {
+    case 'close': closeSheet(); break;
+    case 'bet': openBet(qid); break;
+    case 'bet-confirm': confirmBet(); break;
+    case 'relock': S.lock = null; openBet(qid); break;
+    case 'ask': askClaude(qid); break;
+    case 'note-add': addNote(); break;
+    case 'note-del': delNote(a.dataset.id); break;
+    case 'detail-notes': openDetail(qid, true); break;
+    case 'edit': openEditor(qid); break;
+    case 'resolve': openResolve(qid); break;
+    case 'resolve-save': saveResolve(); break;
+    case 'resolve-clear': clearResolve(); break;
+    case 'void': voidQ(qid); break;
+    case 'delete': deleteQ(qid); break;
+    case 'opt-add': addOptRow(); break;
+    case 'opt-del': delOptRow(a.closest('.optrow')); break;
+    case 'setup': openSetup(); break;
+    case 'setup-go': submitSetup(); break;
+    case 'disconnect': disconnect(); break;
+    case 'copy-link': copyLink(); break;
+  }
+}
+function onSheetInput(e) {
+  const t = e.target;
+  if (t.id === 'stakeRange') { const a = $('#stakeIn'); if (a) a.value = t.value; updateBetPreview(); }
+  else if (t.id === 'stakeIn') { const r = $('#stakeRange'); if (r && t.value) r.value = t.value; updateBetPreview(); }
+  else if (t.name === 'pick') updateBetPreview();
+}
+
+/* =====================================================================
+   13. 同步與啟動
+   ===================================================================== */
+function greetDay() {
+  if (!S.vault) return;
+  const t = todayStr(), last = store.get(LS.day);
+  if (last && last !== t) {
+    const n = Math.min(dayIdxOf(t) - dayIdxOf(last), dayIdxOf(t) - dayIdxOf(S.vault.startDate));
+    if (n > 0) toast(`新的一天！每日點數 +${CFG.dailyPoints * n} 已入帳`);
+  }
+  store.set(LS.day, t);
+}
+function noticeResults() {
+  const resolved = S.board.questions.filter(q => { const r = resultOf(q); return r && r.optionId !== 'void'; }).map(q => q.id);
+  const raw = store.get(LS.seen);
+  if (raw === null) { store.set(LS.seen, JSON.stringify(resolved)); return; }
+  let seen; try { seen = new Set(JSON.parse(raw)); } catch (e) { seen = new Set(); }
+  const fresh = resolved.filter(id => !seen.has(id));
+  if (fresh.length) {
+    fresh.forEach(id => S.fresh.add(id));
+    const q = qById(fresh[0]);
+    toast(`結果公布：${q.title}${fresh.length > 1 ? `（另有 ${fresh.length - 1} 題）` : ''}`);
+  }
+  store.set(LS.seen, JSON.stringify(resolved));
+}
+async function poll() {
+  if (S.polling || S.saving || S.mode === 'loading') return;
+  S.polling = true;
+  try {
+    const jobs = [refreshBoard(), refreshClaude()];
+    if (useApi()) jobs.push(refreshVault());
+    const changed = (await Promise.all(jobs)).some(Boolean);
+    S.syncErr = null;
+    if (changed) { noticeResults(); renderAll(); } else renderSync();
+    greetDay();
+  } catch (e) {
+    S.syncErr = e;
+    if (e.status === 401) { S.tokenBad = true; S.mode = 'guest'; renderAll(); } else renderSync();
+  } finally { S.polling = false; }
+}
+async function boot() {
+  S.mode = 'loading'; S.syncErr = null; renderAll();
+  try { await Promise.all([refreshBoard(), refreshClaude()]); }
+  catch (e) {
+    if (e.status === 401) { S.tokenBad = true; try { await Promise.all([refreshBoard(), refreshClaude()]); } catch (e2) { S.mode = 'error'; S.syncErr = e2; renderAll(); return; } }
+    else { S.mode = 'error'; S.syncErr = e; renderAll(); return; }
+  }
+  if (useApi()) {
+    try {
+      const r = await readJson('vault.json');
+      if (r.missing) { S.vaultBlob = null; S.mode = S.pass.length >= 6 ? 'create' : 'locked'; }
+      else {
+        S.vaultBlob = r.data; S.vaultSha = r.sha; S.vaultTag = r.etag;
+        if (S.pass) { try { S.vault = await openVault(r.data, S.pass); S.mode = 'ready'; } catch (e) { S.mode = 'locked'; } }
+        else S.mode = 'locked';
+      }
+    } catch (e) {
+      if (e.status === 401) { S.tokenBad = true; S.mode = 'guest'; }
+      else { S.mode = 'error'; S.syncErr = e; renderAll(); return; }
+    }
+    if (S.mode === 'create') {
+      S.vault = normVault({ startDate: todayStr() }); S.mode = 'ready';
+      if (!(await mutate('vault', () => {}, 'forecast: 建立加密資料'))) { S.vault = null; S.mode = 'locked'; }
+      store.set(LS.day, todayStr());
+    }
+  } else {
+    S.mode = 'guest';
+    try { const r = await readJson('vault.json'); S.vaultBlob = r.missing ? null : r.data; } catch (e) { /* 不影響瀏覽 */ }
+  }
+  greetDay();
+  noticeResults();
+  renderAll();
+}
+
+applyHashSetup();
+bind();
+updateThemeUI();
+boot();
+setInterval(() => { if (document.visibilityState === 'visible') poll(); }, CFG.pollSeconds * 1000);
+setInterval(() => { if (document.visibilityState === 'visible' && S.mode !== 'loading') { renderWallet(); renderWorkerLine(); renderToolbar(); renderList(); } }, 30000);
+})();
+</script>
+</body>
+</html>
