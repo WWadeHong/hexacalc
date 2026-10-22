@@ -1,54 +1,51 @@
 {
   "version": 1,
   "worker": {
-    "lastRunAt": "2026-10-23T02:52:14+08:00",
-    "lastCheckAt": "2026-10-23T02:52:14+08:00",
-    "summary": "例行檢查，無待處理題目",
+    "lastRunAt": "2026-10-23T04:55:00+08:00",
+    "lastCheckAt": "2026-10-23T04:55:00+08:00",
+    "summary": "更新 3 題研究資料（Fed 維持機率小幅上調至 85%），無題目需公布結果",
     "handledRequestsUpTo": null
   },
   "research": {
     "q_fed_oct2026": {
-      "summary": "9 月 CPI 公布後，市場一度把 10 月升息機率推到三到五成，之後回落。截至 10/21，CME FedWatch 約 2 成、Kalshi 與 Polymarket 平均約 12% 押 10 月升息，其餘押按兵不動；市場普遍預期下一次升息落在 12/9 的會議。主席 Warsh 不再提供前瞻指引，增加了一些不確定性。",
+      "summary": "Reuters 10/16–20 調查中，100 位經濟學家有 94 位預期 10/28 按兵不動、全數預期 12 月升息。CME FedWatch 的 10 月升息機率整個 10 月多在 15%–18%，10/20 約 17%；預測市場也已從 9 月底的高點降到兩成以下。主席 Warsh 不給前瞻指引仍是變數，但主流判斷是 10 月維持、12/9 再升。",
       "facts": [
         "2026-09-16：FOMC 一致決議升息 1 碼至 3.75%–4.00%，為三年多來首次升息。",
         "2026-10-07：會議紀要顯示多數官員認為年底前再升息「可能合適」，但也表示可以等待。",
         "2026-10-14：9 月 CPI 年增 3.7%（預期 3.6%）、月增 0.6%；核心 CPI 年增 2.6%（預期 2.5%）。",
         "2026-10-15：CPI 公布後，CME FedWatch 的 10 月升息機率一度升到約 25%–37%，Kalshi 約 33%。",
-        "2026-10-21：CME FedWatch 約 20%、預測市場平均約 12% 押 10 月升息；12/9 升息被視為較可能。"
+        "2026-10-20：CME FedWatch 顯示 10/28 升息機率約 17%。",
+        "2026-10-20：Reuters 調查 100 位經濟學家，94 位預期 10 月維持 3.75%–4.00%，100 位全數預期 12 月升息。"
       ],
       "sources": [
         {
-          "title": "Oct. 28 Fed Hike Odds Fade, but December Looks Live",
-          "url": "https://ecommerceparadise.com/fed-hike-odds-october-december/"
+          "title": "The Fed will sit still on October 28 — but 100 of 100 economists now expect a December hike（Mitrade）",
+          "url": "https://www.mitrade.com/insights/more/Central-Banks/fed-october-hold-december-hike-20261022J1428"
         },
         {
-          "title": "Headline, core inflation reaccelerates, raising Fed hike odds",
-          "url": "https://www.babypips.com/news/headline-core-inflation-reaccelerates-raising-fed-hike-odds-as-dollar-gains-fade-2026-10-15"
+          "title": "Markets Bet Warsh Holds Rates Steady, But He Won't Say So Himself（Startup Fortune）",
+          "url": "https://startupfortune.com/markets-bet-warsh-holds-rates-steady-but-he-wont-say-so-himself/"
         },
         {
-          "title": "Market raises odds of a 25 bps Fed rate hike to 24.9%",
-          "url": "https://cryptobriefing.com/market-odds-25-bps-fed-hike-october/"
-        },
-        {
-          "title": "Fed officials hope to skip an October rate hike",
-          "url": "https://political.org/2026/10/12/fed-officials-hope-to-skip-an-october-rate-hike-but-this-weeks-inflation-report-could-upend-that-plan/"
+          "title": "Fed Hike Odds: FedWatch vs Polymarket Explained（FXNX）",
+          "url": "https://fxnx.com/en/blog/fed-hike-odds-28-october-fedwatch-vs-polymarket-explained"
         }
       ],
       "probs": {
-        "a": 0.83,
-        "b": 0.15,
+        "a": 0.85,
+        "b": 0.13,
         "c": 0.02
       },
       "reasons": {
-        "a": "市場定價與官員表態都指向等到 12 月再評估，10 月按兵不動是主流。",
+        "a": "FedWatch 約 83% 押維持，Reuters 調查 94% 經濟學家預期 10 月不動。",
         "b": "通膨連續超預期，若官員想提早壓住通膨預期，仍可能出手。",
         "c": "降息或一次升 2 碼都與目前情勢不符。"
       },
       "confidence": "medium",
-      "updatedAt": "2026-10-22T16:50:00+08:00"
+      "updatedAt": "2026-10-23T04:55:00+08:00"
     },
     "q_tsmc_oct2026": {
-      "summary": "第四季財測換算每月平均約 5,540–5,760 億元，對應年增約 51%–57%。若 10 月營收貼近季均，年增率最可能落在 45%–55% 或 55%–65%；不過台積電單月營收常因出貨時點高低起伏，季初月份不一定接近季均，兩端都不能排除。",
+      "summary": "第四季財測換算每月平均約 5,540–5,760 億元，對應年增約 51%–57%。若 10 月營收貼近季均，年增率最可能落在 45%–55% 或 55%–65%；不過台積電單月營收常因出貨時點高低起伏，季初月份不一定接近季均，兩端都不能排除。本輪查無新的 10 月營收線索（11/10 才公布），機率維持不變。",
       "facts": [
         "2025-11-10：台積電 2025 年 10 月營收 3,674.73 億元，是本題年增率的比較基準。",
         "2026-10-08：9 月營收 5,118.57 億元，月減 0.6%、年增 54.7%；前 9 月累計 3.90 兆元，年增 41.1%。",
@@ -82,24 +79,29 @@
         "d": "需 6,063 億元以上，高於財測上緣的月均，較難但不是不可能。"
       },
       "confidence": "medium",
-      "updatedAt": "2026-10-22T16:50:00+08:00"
+      "updatedAt": "2026-10-23T04:55:00+08:00"
     },
     "q_nvda_q3fy27": {
-      "summary": "NVIDIA 近年多數季度的實際營收都高於財測中值，幅度約 2%–6%；若延續這個模式，第三季約落在 1,100–1,145 億美元，介於第二、三個選項之間。第二季季增 18%，若成長動能延續，也可能衝上 1,160 億以上；低於財測中值的機率較低。",
+      "summary": "MarketBeat 目前的第三季營收共識約 1,088 億美元，已從財測公布時的約 1,040 億上修到略高於財測中值 1,080 億。NVIDIA 近年實際營收多超出財測中值 2%–6%，若延續約落在 1,100–1,145 億美元，介於第二、三個選項之間。財報日期尚未官方公告，第三方行事曆估 11/17 或 11/18。",
       "facts": [
         "2026-08-26：第二季營收 962 億美元，年增 106%、季增 18%；資料中心營收 890 億美元。",
         "2026-08-26：第三季營收財測 1,080 億美元 ±2%（約 1,058–1,102 億），毛利率約 74%。",
         "財測公布時，市場對第三季營收的共識約 1,040 億美元。",
-        "第三季財報日期尚未公告，往年多在 11 月第三週發布。"
+        "2026-10-22：MarketBeat 第三季營收共識約 1,088.2 億美元、EPS 2.49 美元；去年同期營收 570.1 億美元。",
+        "財報日期尚未官方公告：MarketBeat 估 11/18，Yahoo 行事曆列 11/17。"
       ],
       "sources": [
         {
-          "title": "Nvidia's 70% growth forecast and margin outlook（Implicator）",
-          "url": "https://www.implicator.ai/nvidia-70-percent-growth-forecast-margin-outlook/"
+          "title": "NVIDIA (NVDA) Q3 2027 Earnings Date, Time & Estimates（MarketBeat）",
+          "url": "https://www.marketbeat.com/earnings/reports/2026-11-18-nvidia-co-stock/"
         },
         {
-          "title": "Nvidia shares react to solid earnings report and stronger guidance（XTB）",
-          "url": "https://www.xtb.com/sca-en/market-analysis/news-and-research/nvidia-shares-react-to-solid-earnings-report-and-stonger-guidance-what-s-next-for-the-ai-giant"
+          "title": "Nvidia Earnings: Q3 Date, $108B Guidance & NVDA Forecast（Veritya Daily）",
+          "url": "https://verityadaily.com/nvidia-earnings"
+        },
+        {
+          "title": "Nvidia's 70% growth forecast and margin outlook（Implicator）",
+          "url": "https://www.implicator.ai/nvidia-70-percent-growth-forecast-margin-outlook/"
         }
       ],
       "probs": {
@@ -115,7 +117,7 @@
         "d": "需超標 7% 以上，要第二季那種強勁季增延續才可能。"
       },
       "confidence": "medium",
-      "updatedAt": "2026-10-22T16:50:00+08:00"
+      "updatedAt": "2026-10-23T04:55:00+08:00"
     }
   },
   "results": {}
