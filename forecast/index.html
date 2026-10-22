@@ -593,7 +593,8 @@ class GhError extends Error { constructor(status, message) { super(message); thi
 const useApi = () => !!S.token && !S.tokenBad;
 
 async function ghFetch(path, { method = 'GET', body, etag } = {}) {
-  const headers = { Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', Authorization: 'Bearer ' + S.token };
+  // 只送 GitHub 瀏覽器端 CORS 允許的標頭（Authorization、Content-Type、If-None-Match）
+  const headers = { Accept: 'application/vnd.github+json', Authorization: 'Bearer ' + S.token };
   if (etag) headers['If-None-Match'] = etag;
   if (body) headers['Content-Type'] = 'application/json';
   try { return await fetch('https://api.github.com' + path, { method, headers, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' }); }
