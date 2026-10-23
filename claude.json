@@ -1,51 +1,54 @@
 {
   "version": 1,
   "worker": {
-    "lastRunAt": "2026-10-23T04:55:00+08:00",
-    "lastCheckAt": "2026-10-23T16:51:51+08:00",
-    "summary": "更新 3 題研究資料（Fed 維持機率小幅上調至 85%），無題目需公布結果",
+    "lastRunAt": "2026-10-23T18:58:00+08:00",
+    "lastCheckAt": "2026-10-23T18:58:00+08:00",
+    "summary": "更新 3 題研究資料（Fed 維持機率上調至 91%、NVIDIA 1,120–1,160 億區間調升至 46%），無題目需公布結果",
     "handledRequestsUpTo": null
   },
   "research": {
     "q_fed_oct2026": {
-      "summary": "Reuters 10/16–20 調查中，100 位經濟學家有 94 位預期 10/28 按兵不動、全數預期 12 月升息。CME FedWatch 的 10 月升息機率整個 10 月多在 15%–18%，10/20 約 17%；預測市場也已從 9 月底的高點降到兩成以下。主席 Warsh 不給前瞻指引仍是變數，但主流判斷是 10 月維持、12/9 再升。",
+      "summary": "預測市場與利率期貨在 10 月下旬進一步排除 10/28 升息：DeFi Rate 彙整 Kalshi 與 Polymarket 10/23 報價，10 月升息僅約 6%（一週前約 14%），OIS 隱含機率約 7.6%。Reuters 調查 94/100 位經濟學家預期 10 月按兵不動，市場改押 12/9 升息（約 75%）。目前處於會前緘默期，除非出現意外數據，維持利率是壓倒性主流判斷。",
       "facts": [
         "2026-09-16：FOMC 一致決議升息 1 碼至 3.75%–4.00%，為三年多來首次升息。",
-        "2026-10-07：會議紀要顯示多數官員認為年底前再升息「可能合適」，但也表示可以等待。",
-        "2026-10-14：9 月 CPI 年增 3.7%（預期 3.6%）、月增 0.6%；核心 CPI 年增 2.6%（預期 2.5%）。",
-        "2026-10-15：CPI 公布後，CME FedWatch 的 10 月升息機率一度升到約 25%–37%，Kalshi 約 33%。",
-        "2026-10-20：CME FedWatch 顯示 10/28 升息機率約 17%。",
-        "2026-10-20：Reuters 調查 100 位經濟學家，94 位預期 10 月維持 3.75%–4.00%，100 位全數預期 12 月升息。"
+        "2026-10-14：9 月 CPI 年增 3.7%（預期 3.6%）、核心 2.6%（預期 2.5%）；CME FedWatch 10 月升息機率一度升至約 41.5%。",
+        "2026-10-20：Reuters 調查 100 位經濟學家，94 位預期 10 月維持，100 位全數預期 12 月升息。",
+        "2026-10-23：DeFi Rate 彙整 Kalshi（5.5%）與 Polymarket（6.5%），10/28 升息機率約 6%、維持約 94%。",
+        "2026-10-23：RateProbability（OIS）顯示 10/28 升息機率 7.6%、12/9 升息 75.6%。"
       ],
       "sources": [
         {
-          "title": "The Fed will sit still on October 28 — but 100 of 100 economists now expect a December hike（Mitrade）",
+          "title": "Fed Rate Decision Odds: Oct. 28 FOMC Hike or Hold（DeFi Rate）",
+          "url": "https://defirate.com/odds/fed-decision/"
+        },
+        {
+          "title": "Fed Rate Odds: FOMC Meeting Probabilities（RateProbability）",
+          "url": "https://rateprobability.com/fed"
+        },
+        {
+          "title": "Traders Give Warsh A 42% Chance Of Doing Something This Month…（Yahoo Finance）",
+          "url": "https://finance.yahoo.com/economy/policy/articles/traders-warsh-42-chance-doing-082651946.html"
+        },
+        {
+          "title": "The Fed will sit still on October 28（Mitrade）",
           "url": "https://www.mitrade.com/insights/more/Central-Banks/fed-october-hold-december-hike-20261022J1428"
-        },
-        {
-          "title": "Markets Bet Warsh Holds Rates Steady, But He Won't Say So Himself（Startup Fortune）",
-          "url": "https://startupfortune.com/markets-bet-warsh-holds-rates-steady-but-he-wont-say-so-himself/"
-        },
-        {
-          "title": "Fed Hike Odds: FedWatch vs Polymarket Explained（FXNX）",
-          "url": "https://fxnx.com/en/blog/fed-hike-odds-28-october-fedwatch-vs-polymarket-explained"
         }
       ],
       "probs": {
-        "a": 0.85,
-        "b": 0.13,
+        "a": 0.91,
+        "b": 0.07,
         "c": 0.02
       },
       "reasons": {
-        "a": "FedWatch 約 83% 押維持，Reuters 調查 94% 經濟學家預期 10 月不動。",
-        "b": "通膨連續超預期，若官員想提早壓住通膨預期，仍可能出手。",
+        "a": "Kalshi/Polymarket 約 94%、OIS 約 92% 押維持，經濟學家幾乎一致預期 10 月不動。",
+        "b": "通膨連續超預期，仍有小幅意外升息的可能，但市場僅給約 6%–8%。",
         "c": "降息或一次升 2 碼都與目前情勢不符。"
       },
-      "confidence": "medium",
-      "updatedAt": "2026-10-23T04:55:00+08:00"
+      "confidence": "high",
+      "updatedAt": "2026-10-23T18:58:00+08:00"
     },
     "q_tsmc_oct2026": {
-      "summary": "第四季財測換算每月平均約 5,540–5,760 億元，對應年增約 51%–57%。若 10 月營收貼近季均，年增率最可能落在 45%–55% 或 55%–65%；不過台積電單月營收常因出貨時點高低起伏，季初月份不一定接近季均，兩端都不能排除。本輪查無新的 10 月營收線索（11/10 才公布），機率維持不變。",
+      "summary": "第四季財測換算每月平均約 5,540–5,760 億元，對應年增約 51%–57%。若 10 月營收貼近季均，年增率最可能落在 45%–55% 或 55%–65%；不過台積電單月營收常因出貨時點起伏，季初月份不一定接近季均。本輪仍查無 10 月營收的新線索（11/10 才公布），機率維持不變。",
       "facts": [
         "2025-11-10：台積電 2025 年 10 月營收 3,674.73 億元，是本題年增率的比較基準。",
         "2026-10-08：9 月營收 5,118.57 億元，月減 0.6%、年增 54.7%；前 9 月累計 3.90 兆元，年增 41.1%。",
@@ -79,45 +82,45 @@
         "d": "需 6,063 億元以上，高於財測上緣的月均，較難但不是不可能。"
       },
       "confidence": "medium",
-      "updatedAt": "2026-10-23T04:55:00+08:00"
+      "updatedAt": "2026-10-23T18:58:00+08:00"
     },
     "q_nvda_q3fy27": {
-      "summary": "MarketBeat 目前的第三季營收共識約 1,088 億美元，已從財測公布時的約 1,040 億上修到略高於財測中值 1,080 億。NVIDIA 近年實際營收多超出財測中值 2%–6%，若延續約落在 1,100–1,145 億美元，介於第二、三個選項之間。財報日期尚未官方公告，第三方行事曆估 11/17 或 11/18。",
+      "summary": "Benzinga 10/23 的第三季營收共識約 1,089.8 億美元，略高於財測中值 1,080 億。NVIDIA 過去四季實際營收比財測中值高約 4.5%–6%（比共識高 3.3%–4.5%），若延續約落在 1,130–1,145 億美元，因此略為上調 1,120–1,160 億區間機率。Manifold（玩具幣、流動性低）的分布也集中在 1,100–1,140 億。財報日期第三方多列 11/18，尚待官方確認。",
       "facts": [
-        "2026-08-26：第二季營收 962 億美元，年增 106%、季增 18%；資料中心營收 890 億美元。",
-        "2026-08-26：第三季營收財測 1,080 億美元 ±2%（約 1,058–1,102 億），毛利率約 74%。",
-        "財測公布時，市場對第三季營收的共識約 1,040 億美元。",
-        "2026-10-22：MarketBeat 第三季營收共識約 1,088.2 億美元、EPS 2.49 美元；去年同期營收 570.1 億美元。",
-        "財報日期尚未官方公告：MarketBeat 估 11/18，Yahoo 行事曆列 11/17。"
+        "2026-08-26：第二季營收 962.2 億美元，比當時共識 921.1 億高 4.5%；第三季財測 1,080 億 ±2%（1,058.4–1,101.6 億）。",
+        "過去四季營收較共識超標：Q3 FY26 +3.9%、Q4 FY26 +3.4%、Q1 FY27 +3.3%、Q2 FY27 +4.5%。",
+        "2026-10-23：Benzinga 第三季營收共識約 1,089.8 億美元、EPS 2.48 美元；第四季共識 1,242.7 億。",
+        "2026-10-23：Manifold 市場分布：低於 1,100 億 8%、1,100–1,120 億 40%、1,120–1,140 億 26%、1,140–1,160 億 17%、1,160 億以上 10%（玩具幣、交易量小）。",
+        "財報日期尚未官方公告：MarketBeat 與 Manifold 列 11/18 盤後。"
       ],
       "sources": [
         {
-          "title": "NVIDIA (NVDA) Q3 2027 Earnings Date, Time & Estimates（MarketBeat）",
+          "title": "NVIDIA Earnings Forecasts（Benzinga）",
+          "url": "https://www.benzinga.com/quote/NVDA/earnings-forecasts"
+        },
+        {
+          "title": "What will NVIDIA's Q3 fiscal 2027 revenue be?（Manifold）",
+          "url": "https://manifold.markets/Terminator2/what-will-nvidias-q3-fiscal-2027-re"
+        },
+        {
+          "title": "NVIDIA (NVDA) Q3 2027 Earnings Date & Estimates（MarketBeat）",
           "url": "https://www.marketbeat.com/earnings/reports/2026-11-18-nvidia-co-stock/"
-        },
-        {
-          "title": "Nvidia Earnings: Q3 Date, $108B Guidance & NVDA Forecast（Veritya Daily）",
-          "url": "https://verityadaily.com/nvidia-earnings"
-        },
-        {
-          "title": "Nvidia's 70% growth forecast and margin outlook（Implicator）",
-          "url": "https://www.implicator.ai/nvidia-70-percent-growth-forecast-margin-outlook/"
         }
       ],
       "probs": {
-        "a": 0.06,
-        "b": 0.36,
-        "c": 0.43,
+        "a": 0.05,
+        "b": 0.34,
+        "c": 0.46,
         "d": 0.15
       },
       "reasons": {
-        "a": "需低於財測中值，NVIDIA 近年很少發生。",
-        "b": "只小幅優於財測（約 0%–3.7%）就落在這區。",
-        "c": "若延續過去約 4%–7% 的超標幅度，會落在這區。",
-        "d": "需超標 7% 以上，要第二季那種強勁季增延續才可能。"
+        "a": "需低於財測中值，NVIDIA 近年未曾發生。",
+        "b": "只小幅優於財測（0%–3.7%）就落在這區，若需求或出貨稍受限仍有可能。",
+        "c": "延續過去四季約 4.5%–6% 的超標幅度，會落在約 1,130–1,145 億，機率最高。",
+        "d": "需超標 7.4% 以上，要比過去幾季更強的爆發才可能。"
       },
       "confidence": "medium",
-      "updatedAt": "2026-10-23T04:55:00+08:00"
+      "updatedAt": "2026-10-23T18:58:00+08:00"
     }
   },
   "results": {}
