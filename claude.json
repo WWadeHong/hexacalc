@@ -1,9 +1,9 @@
 {
   "version": 1,
   "worker": {
-    "lastRunAt": "2026-10-24T22:53:17+08:00",
-    "lastCheckAt": "2026-10-25T00:52:01+08:00",
-    "summary": "更新 3 題研究資料（Fed 維持調至 92%、升息降至 6%；台積電、NVIDIA 無新消息、機率不變），無題目需公布結果",
+    "lastRunAt": "2026-10-25T02:51:44+08:00",
+    "lastCheckAt": "2026-10-25T02:51:44+08:00",
+    "summary": "例行檢查，無待處理題目",
     "handledRequestsUpTo": null
   },
   "research": {
