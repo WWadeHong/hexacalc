@@ -1,26 +1,32 @@
 {
   "version": 1,
   "worker": {
-    "lastRunAt": "2026-10-26T16:55:00+08:00",
-    "lastCheckAt": "2026-10-26T22:52:23+08:00",
-    "summary": "更新 3 題資料：Fed 市場仍約 92%–94% 押維持、機率維持 93%；台積電、NVIDIA 無新消息、機率維持",
+    "lastRunAt": "2026-10-27T02:55:00+08:00",
+    "lastCheckAt": "2026-10-27T02:55:00+08:00",
+    "summary": "更新 Fed 10/28 題資料：市場仍約 94% 押維持，機率維持 93%/5%/2%",
     "handledRequestsUpTo": null
   },
   "research": {
     "q_fed_oct2026": {
-      "summary": "會前最後一個交易日前夕，市場仍壓倒性預期 10/28 按兵不動：predictionmarketspicks 10/26 凌晨（美東 0:30）快照顯示 Kalshi 維持 91%–93.5%、Polymarket 94.5%、期貨隱含維持 92%、升息 8%（較 10/24 晚間的 10% 再降）。市場改押 12/9 升息（約 78%）。會前緘默期無新消息，10/28 上午另有核心 PCE；除非重大意外，維持利率仍是主流，本輪機率維持。",
+      "summary": "會前最後一個交易日（美東 10/26），市場仍壓倒性預期 10/28 按兵不動：Polymarket 約 94% 押維持，PIMCO 等會前評論亦預期暫停、但保留年底再升息的空間。本輪網頁讀取受限、未取得新的即時賠率，搜尋所見資訊與前次一致，機率維持。關鍵變數為 10/28 上午的核心 PCE；除非重大意外，維持利率仍是主流。",
       "facts": [
         "2026-09-16：FOMC 一致決議升息 1 碼至 3.75%–4.00%，為三年多來首次升息。",
         "2026-10-14：9 月 CPI 年增 3.7%（預期 3.6%）、核心 2.6%（預期 2.5%）。",
         "2026-10-20：Reuters 調查 100 位經濟學家，94 位預期 10 月維持，100 位全數預期 12 月升息。",
         "2026-10-25：DeFi Rate 快照（美東 14:50）：10/28 維持 94%、升息 6%、降息約 2%；Kalshi 升息一週內由 13% 降至 6%；12/9 升息約 76%。",
         "2026-10-26：predictionmarketspicks 快照（美東 0:30）：Kalshi 維持 91%–93.5%、升息 6.5%–8%；Polymarket 維持 94.5%、升 1 碼 5.5%；期貨維持 92%、升息 8%；12 月升息約 78%。",
+        "2026-10-23：PIMCO 會前評論〈A Pause Is Still a Recalibration〉預期 10 月暫停升息。",
+        "2026-10-26：Prediction News 報導 Polymarket 交易者押 10/28 維持利率的機率達 94%。",
         "2026-10-28：核心 PCE 美東 8:30 公布，FOMC 聲明 14:00、記者會 14:30。"
       ],
       "sources": [
         {
-          "title": "Fed Rate Odds Today（predictionmarketspicks）",
-          "url": "https://predictionmarketspicks.com/tools/fed-rate-tracker"
+          "title": "Polymarket trader bets $360K on Fed rate hold as odds hit 94%（Prediction News）",
+          "url": "https://predictionnews.com/story/polymarket-traders-price-94-odds-fed-holds-rates-at-october-28-fomc-meeting"
+        },
+        {
+          "title": "October Fed Meeting Preview: A Pause Is Still a Recalibration（PIMCO）",
+          "url": "https://www.advisorperspectives.com/commentaries/2026/10/23/pause-still-recalibration?topic=retirement-income"
         },
         {
           "title": "Fed Rate Decision Odds（DeFi Rate）",
@@ -38,7 +44,7 @@
         "c": "降息或一次升 2 碼都與目前情勢不符，各市場合計約 1%–2%。"
       },
       "confidence": "high",
-      "updatedAt": "2026-10-26T16:55:00+08:00"
+      "updatedAt": "2026-10-27T02:55:00+08:00"
     },
     "q_tsmc_oct2026": {
       "summary": "第四季財測換算每月平均約 5,540–5,760 億元，對應年增約 51%–57%。若 10 月營收貼近季均，年增率最可能落在 45%–55% 或 55%–65%；不過台積電單月營收常因出貨時點起伏，季初月份不一定接近季均。本輪（10/26 下午）再查，仍無 10 月營收的新線索（11/10 才公布），機率維持不變。",
