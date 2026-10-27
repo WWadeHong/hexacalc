@@ -1,22 +1,24 @@
 {
   "version": 1,
   "worker": {
-    "lastRunAt": "2026-10-27T10:53:01+08:00",
-    "lastCheckAt": "2026-10-27T16:52:30+08:00",
-    "summary": "更新 Fed 10/28 利率決議機率（維持 91%、升息 7%、其他 2%）",
+    "lastRunAt": "2026-10-27T18:57:55+08:00",
+    "lastCheckAt": "2026-10-27T18:57:55+08:00",
+    "summary": "更新 3 題資料，機率皆維持（Fed 維持 91%／升息 7%／其他 2%）",
     "handledRequestsUpTo": null
   },
   "research": {
     "q_fed_oct2026": {
-      "summary": "會前倒數一天，市場仍壓倒性預期 10/28 按兵不動，但意外升息的機率較前次小幅回升：美東 10/26 晚間 Kalshi 維持約 89%–92.5%、升息 7.5%–9%，Polymarket 維持約 93%，聯邦基金期貨維持 90%、升息 10%。9 月非農僅增 2.9 萬人、遠低於預期，削弱立即升息理由；但油價走高與通膨連續超預期使鷹派風險仍在。判斷維持利率仍是主流，略調高升息機率。",
+      "summary": "會前最後一天，市場仍壓倒性預期 10/28 按兵不動：美東 10/27 早上 DeFi Rate 顯示 Kalshi 維持 93%、升息 7%，Polymarket 升息最後成交約 7.5%；美東 10/26 晚間聯邦基金期貨維持 90%、升息 10%。一週來升息機率已從約 13% 降至 7%。9 月非農疲弱削弱立即升息理由，但通膨連續超預期使 12 月升息幾成共識。判斷維持利率仍是主流，機率不變。",
       "facts": [
         "2026-09-16：FOMC 12–0 一致決議升息 1 碼至 3.75%–4.00%，為三年多來首次升息。",
         "2026-10-14：9 月 CPI 年增 3.7%（預期 3.6%）、核心 2.6%（預期 2.5%）。",
         "9 月非農就業僅增 2.9 萬人，遠低於約 9 萬人的預期。",
         "2026-10-20：Reuters 調查 100 位經濟學家，94 位預期 10 月維持，100 位全數預期 12 月升息。",
-        "2026-10-26（美東晚間）：Kalshi 維持 89%–92.5%、升 1 碼 7.5%–9%；Polymarket 維持約 93%、升 1 碼 6.5%；期貨維持 90%、升息 10%；DeFi Rate 平均維持 93%、升息 7%。",
+        "2026-10-27（美東 06:50）：DeFi Rate 顯示 Kalshi 維持 93%、升 1 碼 7%（一週前約 13%）；Polymarket 升 1 碼最後成交約 7.5%。",
+        "2026-10-26（美東晚間）：Polymarket 維持約 93%；聯邦基金期貨維持 90%、升息 10%。",
         "2026-10-26：DeFi Rate 顯示 12/9 升息約 74%–77%，2026 年內任一次升息約 78%。",
-        "2026-10-28：FOMC 聲明美東 14:00（台灣 10/29 02:00），記者會 14:30。"
+        "2026-10-28：FOMC 聲明美東 14:00（台灣 10/29 02:00），記者會 14:30。",
+        "2026-10-28：美東 08:30 公布 9 月核心 PCE，為會前最後一項數據。"
       ],
       "sources": [
         {
@@ -24,16 +26,8 @@
           "url": "https://predictionmarketspicks.com/tools/fed-rate-tracker"
         },
         {
-          "title": "Will the Fed Raise Rates in October 2026?（predictionmarketspicks）",
-          "url": "https://predictionmarketspicks.com/tools/fed-rate-tracker/october-2026"
-        },
-        {
           "title": "Fed Rate Decision Odds（DeFi Rate）",
           "url": "https://defirate.com/prediction-markets/fed-decision-odds/"
-        },
-        {
-          "title": "Fed Rate Decision October 2026: Hike or Hold on 28 Oct?（Admirals）",
-          "url": "https://admiralmarkets.com/analytics/traders-blog/fed-rate-decision-october-2026"
         }
       ],
       "probs": {
@@ -47,10 +41,10 @@
         "c": "降息或一次升 2 碼都與目前情勢不符，各市場合計約 1%–2%。"
       },
       "confidence": "high",
-      "updatedAt": "2026-10-27T10:53:01+08:00"
+      "updatedAt": "2026-10-27T18:57:55+08:00"
     },
     "q_tsmc_oct2026": {
-      "summary": "第四季財測換算每月平均約 5,540–5,760 億元，對應年增約 51%–57%。若 10 月營收貼近季均，年增率最可能落在 45%–55% 或 55%–65%；不過台積電單月營收常因出貨時點起伏，季初月份不一定接近季均。本輪（10/27 清晨）再查，仍無 10 月營收的新線索或法人單月預估（11/10 才公布），機率維持不變。",
+      "summary": "第四季財測（匯率假設 31.8）換算每月平均約 5,540–5,760 億元，對應年增約 51%–57%。若 10 月營收貼近季均，年增率最可能落在 45%–55% 或 55%–65%；不過台積電單月營收常因出貨時點起伏，季初月份不一定接近季均。本輪（10/27 傍晚）再查，仍無 10 月營收的新線索或法人單月預估（11/10 才公布），機率維持不變。",
       "facts": [
         "2025-11-10：台積電 2025 年 10 月營收 3,674.73 億元，是本題年增率的比較基準。",
         "2026-10-08：9 月營收 5,118.57 億元，月減 0.6%、年增 54.7%；前 9 月累計 3.90 兆元，年增 41.1%。",
@@ -59,12 +53,12 @@
       ],
       "sources": [
         {
-          "title": "台積電 9 月營收 5,118.57 億元（TechNews 科技新報）",
-          "url": "https://finance.technews.tw/2026/10/08/tsmc-2330-202609-financial-report/"
+          "title": "〈台積電法說〉Q4美元營收估季增14%（優分析）",
+          "url": "https://uanalyze.com.tw/articles/3164557160"
         },
         {
-          "title": "台積電法說報喜！Q4 營收上看 1.72 兆元（財報狗）",
-          "url": "https://statementdog.com/news/17898"
+          "title": "台積電營收/9月逾5,118億元 創歷年同期新高（經濟日報）",
+          "url": "https://money.udn.com/money/amp/story/5607/9802747"
         },
         {
           "title": "台積電 2025 年 10 月營收 3,674.73 億元（旺得富）",
@@ -84,29 +78,29 @@
         "d": "需 6,063 億元以上，高於財測上緣的月均，較難但不是不可能。"
       },
       "confidence": "medium",
-      "updatedAt": "2026-10-27T06:51:47+08:00"
+      "updatedAt": "2026-10-27T18:57:55+08:00"
     },
     "q_nvda_q3fy27": {
-      "summary": "Benzinga 第三季營收共識約 1,089.8 億美元，略高於財測中值 1,080 億。NVIDIA 過去四季實際營收比財測中值高約 4.5%–6%（比共識高 3.3%–4.5%），若延續約落在 1,130–1,145 億美元，因此 1,120–1,160 億區間機率最高。Manifold（玩具幣、流動性低）分布仍集中在 1,100–1,140 億。本輪（10/27 清晨）再查：共識與 Manifold 分布皆未變，官方仍未公布財報日期（第三方多列 11/18 盤後），機率維持。",
+      "summary": "Benzinga 第三季營收共識約 1,089.8 億美元（10/23），略高於財測中值 1,080 億。NVIDIA 過去四季實際營收比財測中值高約 4.5%–6%（比共識高 3.3%–4.5%），若延續約落在 1,130–1,145 億美元，因此 1,120–1,160 億區間機率最高。本輪（10/27 傍晚）再查：無新共識資料，官方仍未公布財報日期（days.to 列 11/18 盤後、未確認；去年同期於 10/29 才公告），機率維持。",
       "facts": [
         "2026-08-26：第二季營收 962.2 億美元，比當時共識 921.1 億高 4.5%；第三季財測 1,080 億 ±2%（1,058.4–1,101.6 億）。",
         "過去四季營收較共識超標：Q3 FY26 +3.9%、Q4 FY26 +3.4%、Q1 FY27 +3.3%、Q2 FY27 +4.5%。",
         "2026-10-23：Benzinga 第三季營收共識約 1,089.8 億美元、EPS 2.48 美元；第四季共識 1,242.7 億。",
         "2026-10-23：Manifold 市場分布：低於 1,100 億 8%、1,100–1,120 億 40%、1,120–1,140 億 26%、1,140–1,160 億 17%、1,160 億以上 10%（玩具幣、交易量小）。",
-        "2026-10-23：財報日期仍未經官方公告，days.to 標示 11/18 盤後（未確認），Manifold 亦列 11/18。"
+        "2026-10-26：days.to 仍標示財報日 11/18 盤後「未經官方確認」；CMEG（10/21）指第三方列 11/17、11/18、11/25。"
       ],
       "sources": [
         {
-          "title": "NVIDIA Earnings Forecasts（Benzinga）",
-          "url": "https://www.benzinga.com/quote/NVDA/earnings-forecasts"
+          "title": "NVIDIA Earnings Date（days.to）",
+          "url": "https://days.to/nvidia-earnings"
+        },
+        {
+          "title": "Nvidia Earnings Date（CME Lite Group）",
+          "url": "https://www.cmelitegroup.com/knowledge-hub/nvidia-earnings-date/"
         },
         {
           "title": "What will NVIDIA's Q3 fiscal 2027 revenue be?（Manifold）",
           "url": "https://manifold.markets/Terminator2/what-will-nvidias-q3-fiscal-2027-re"
-        },
-        {
-          "title": "NVIDIA Earnings Date（days.to）",
-          "url": "https://days.to/nvidia-earnings"
         }
       ],
       "probs": {
@@ -122,7 +116,7 @@
         "d": "需超標 7.4% 以上，要比過去幾季更強的爆發才可能。"
       },
       "confidence": "medium",
-      "updatedAt": "2026-10-27T06:51:47+08:00"
+      "updatedAt": "2026-10-27T18:57:55+08:00"
     }
   },
   "results": {}
