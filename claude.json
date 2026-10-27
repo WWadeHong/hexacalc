@@ -1,50 +1,53 @@
 {
   "version": 1,
   "worker": {
-    "lastRunAt": "2026-10-27T06:51:47+08:00",
-    "lastCheckAt": "2026-10-27T08:52:22+08:00",
-    "summary": "例行更新台積電 10 月營收、NVIDIA Q3 營收兩題：查無新資訊，機率維持",
+    "lastRunAt": "2026-10-27T10:53:01+08:00",
+    "lastCheckAt": "2026-10-27T10:53:01+08:00",
+    "summary": "更新 Fed 10/28 利率決議機率（維持 91%、升息 7%、其他 2%）",
     "handledRequestsUpTo": null
   },
   "research": {
     "q_fed_oct2026": {
-      "summary": "會前最後一個交易日（美東 10/26），市場仍壓倒性預期 10/28 按兵不動：Polymarket 約 94% 押維持，PIMCO 等會前評論亦預期暫停、但保留年底再升息的空間。本輪網頁讀取受限、未取得新的即時賠率，搜尋所見資訊與前次一致，機率維持。關鍵變數為 10/28 上午的核心 PCE；除非重大意外，維持利率仍是主流。",
+      "summary": "會前倒數一天，市場仍壓倒性預期 10/28 按兵不動，但意外升息的機率較前次小幅回升：美東 10/26 晚間 Kalshi 維持約 89%–92.5%、升息 7.5%–9%，Polymarket 維持約 93%，聯邦基金期貨維持 90%、升息 10%。9 月非農僅增 2.9 萬人、遠低於預期，削弱立即升息理由；但油價走高與通膨連續超預期使鷹派風險仍在。判斷維持利率仍是主流，略調高升息機率。",
       "facts": [
-        "2026-09-16：FOMC 一致決議升息 1 碼至 3.75%–4.00%，為三年多來首次升息。",
+        "2026-09-16：FOMC 12–0 一致決議升息 1 碼至 3.75%–4.00%，為三年多來首次升息。",
         "2026-10-14：9 月 CPI 年增 3.7%（預期 3.6%）、核心 2.6%（預期 2.5%）。",
+        "9 月非農就業僅增 2.9 萬人，遠低於約 9 萬人的預期。",
         "2026-10-20：Reuters 調查 100 位經濟學家，94 位預期 10 月維持，100 位全數預期 12 月升息。",
-        "2026-10-25：DeFi Rate 快照（美東 14:50）：10/28 維持 94%、升息 6%、降息約 2%；Kalshi 升息一週內由 13% 降至 6%；12/9 升息約 76%。",
-        "2026-10-26：predictionmarketspicks 快照（美東 0:30）：Kalshi 維持 91%–93.5%、升息 6.5%–8%；Polymarket 維持 94.5%、升 1 碼 5.5%；期貨維持 92%、升息 8%；12 月升息約 78%。",
-        "2026-10-23：PIMCO 會前評論〈A Pause Is Still a Recalibration〉預期 10 月暫停升息。",
-        "2026-10-26：Prediction News 報導 Polymarket 交易者押 10/28 維持利率的機率達 94%。",
-        "2026-10-28：核心 PCE 美東 8:30 公布，FOMC 聲明 14:00、記者會 14:30。"
+        "2026-10-26（美東晚間）：Kalshi 維持 89%–92.5%、升 1 碼 7.5%–9%；Polymarket 維持約 93%、升 1 碼 6.5%；期貨維持 90%、升息 10%；DeFi Rate 平均維持 93%、升息 7%。",
+        "2026-10-26：DeFi Rate 顯示 12/9 升息約 74%–77%，2026 年內任一次升息約 78%。",
+        "2026-10-28：FOMC 聲明美東 14:00（台灣 10/29 02:00），記者會 14:30。"
       ],
       "sources": [
         {
-          "title": "Polymarket trader bets $360K on Fed rate hold as odds hit 94%（Prediction News）",
-          "url": "https://predictionnews.com/story/polymarket-traders-price-94-odds-fed-holds-rates-at-october-28-fomc-meeting"
+          "title": "Fed Rate Odds Today（predictionmarketspicks）",
+          "url": "https://predictionmarketspicks.com/tools/fed-rate-tracker"
         },
         {
-          "title": "October Fed Meeting Preview: A Pause Is Still a Recalibration（PIMCO）",
-          "url": "https://www.advisorperspectives.com/commentaries/2026/10/23/pause-still-recalibration?topic=retirement-income"
+          "title": "Will the Fed Raise Rates in October 2026?（predictionmarketspicks）",
+          "url": "https://predictionmarketspicks.com/tools/fed-rate-tracker/october-2026"
         },
         {
           "title": "Fed Rate Decision Odds（DeFi Rate）",
           "url": "https://defirate.com/prediction-markets/fed-decision-odds/"
+        },
+        {
+          "title": "Fed Rate Decision October 2026: Hike or Hold on 28 Oct?（Admirals）",
+          "url": "https://admiralmarkets.com/analytics/traders-blog/fed-rate-decision-october-2026"
         }
       ],
       "probs": {
-        "a": 0.93,
-        "b": 0.05,
+        "a": 0.91,
+        "b": 0.07,
         "c": 0.02
       },
       "reasons": {
-        "a": "預測市場 10/26 最新 Kalshi 約 92%、Polymarket 94.5%、期貨 92% 押維持，經濟學家幾乎一致預期 10 月不動。",
-        "b": "通膨連續超預期，期貨仍給約 8%、預測市場約 6% 的意外升息機率，但一週來持續下滑。",
+        "a": "Kalshi、Polymarket、期貨最新報價約 89%–93% 押維持，經濟學家幾乎一致預期 10 月不動，就業數據疲弱也支持暫停。",
+        "b": "通膨連續超預期、油價走高，期貨約 10%、預測市場 7%–9% 的意外升息機率，較前次略升。",
         "c": "降息或一次升 2 碼都與目前情勢不符，各市場合計約 1%–2%。"
       },
       "confidence": "high",
-      "updatedAt": "2026-10-27T02:55:00+08:00"
+      "updatedAt": "2026-10-27T10:53:01+08:00"
     },
     "q_tsmc_oct2026": {
       "summary": "第四季財測換算每月平均約 5,540–5,760 億元，對應年增約 51%–57%。若 10 月營收貼近季均，年增率最可能落在 45%–55% 或 55%–65%；不過台積電單月營收常因出貨時點起伏，季初月份不一定接近季均。本輪（10/27 清晨）再查，仍無 10 月營收的新線索或法人單月預估（11/10 才公布），機率維持不變。",
