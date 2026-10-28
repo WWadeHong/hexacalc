@@ -1,9 +1,9 @@
 {
   "version": 1,
   "worker": {
-    "lastRunAt": "2026-10-28T20:54:06+08:00",
-    "lastCheckAt": "2026-10-29T00:52:33+08:00",
-    "summary": "例行再查台積電 10 月營收、NVIDIA Q3 營收兩題，無新資訊，機率維持",
+    "lastRunAt": "2026-10-29T02:52:58+08:00",
+    "lastCheckAt": "2026-10-29T02:52:58+08:00",
+    "summary": "公布 Fed 10/28 利率決議結果：維持 3.75%–4.00% 不變",
     "handledRequestsUpTo": null
   },
   "research": {
@@ -116,5 +116,21 @@
       "updatedAt": "2026-10-28T20:54:06+08:00"
     }
   },
-  "results": {}
+  "results": {
+    "q_fed_oct2026": {
+      "optionId": "a",
+      "note": "FOMC 10/28 以 10–2 決議維持聯邦基金利率目標區間 3.75%–4.00% 不變；Cook 與 Hammack 投反對票，主張升息 1 碼。",
+      "sources": [
+        {
+          "title": "Federal Reserve issues FOMC statement（2026-10-28）",
+          "url": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm"
+        },
+        {
+          "title": "Fed interest rate decision October 2026: Fed holds rates steady（CNBC）",
+          "url": "https://www.cnbc.com/2026/10/28/fed-interest-rate-decision-october-2026.html"
+        }
+      ],
+      "decidedAt": "2026-10-29T02:52:58+08:00"
+    }
+  }
 }
