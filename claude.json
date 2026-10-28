@@ -2,7 +2,7 @@
   "version": 1,
   "worker": {
     "lastRunAt": "2026-10-28T10:52:26+08:00",
-    "lastCheckAt": "2026-10-28T12:51:49+08:00",
+    "lastCheckAt": "2026-10-28T14:53:07+08:00",
     "summary": "會前更新 Fed 10/28 利率題機率（維持 93%、升息 5%、其他 2%）",
     "handledRequestsUpTo": null
   },
