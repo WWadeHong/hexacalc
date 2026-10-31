@@ -1,9 +1,9 @@
 {
   "version": 1,
   "worker": {
-    "lastRunAt": "2026-10-31T20:51:42+08:00",
+    "lastRunAt": "2026-10-31T14:52:17+08:00",
     "lastCheckAt": "2026-10-31T20:51:42+08:00",
-    "summary": "例行檢查，無待處理題目",
+    "summary": "例行更新 2 題：台積電、NVIDIA 皆無新資訊，機率維持",
     "handledRequestsUpTo": null
   },
   "research": {
